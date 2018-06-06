@@ -4,25 +4,27 @@ package org.zhongweixian.response.wx;
  * Created by caoliang on  6/6/2018
  */
 public class WxResponse {
-    protected String return_code;
+    private String return_code;
 
-    protected String return_msg;
+    private String return_msg;
 
-    protected String appid;
+    private String appid;
 
-    protected String mch_id;
+    private String mch_id;
 
-    protected String nonce_str;
+    private String nonce_str;
 
-    protected String sign;
+    private String sign;
 
-    protected String sign_type;
+    private String sign_type;
 
-    protected String result_code;
+    private String result_code;
 
-    protected String prepay_id;
+    private String prepay_id;
 
-    protected String trade_type;
+    private String trade_type;
+
+    private String code_url;
 
     public String getReturn_code() {
         return return_code;
@@ -104,6 +106,14 @@ public class WxResponse {
         this.trade_type = trade_type;
     }
 
+    public String getCode_url() {
+        return code_url;
+    }
+
+    public void setCode_url(String code_url) {
+        this.code_url = code_url;
+    }
+
     @Override
     public String toString() {
         return "WxResponse{" +
@@ -117,6 +127,7 @@ public class WxResponse {
                 ", result_code='" + result_code + '\'' +
                 ", prepay_id='" + prepay_id + '\'' +
                 ", trade_type='" + trade_type + '\'' +
+                ", code_url='" + code_url + '\'' +
                 '}';
     }
 }
