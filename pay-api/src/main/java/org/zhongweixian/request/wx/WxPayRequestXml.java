@@ -24,6 +24,9 @@ public class WxPayRequestXml {
     @XmlElement
     private String nonce_str;
 
+    @XmlElement
+    private String auth_code;
+
     /**
      * @since 2.8.5
      */
@@ -284,4 +287,11 @@ public class WxPayRequestXml {
         this.sign_type = sign_type;
     }
 
+    public String getAuth_code() {
+        return auth_code;
+    }
+
+    public void setAuth_code(String auth_code) {
+        this.auth_code = auth_code;
+    }
 }

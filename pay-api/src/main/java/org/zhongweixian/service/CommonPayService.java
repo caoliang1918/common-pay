@@ -14,5 +14,6 @@ public interface CommonPayService {
 
     PayResponse pay(PayRequest payRequest);
 
+    //OrderResponse queryOrder();
 
 }

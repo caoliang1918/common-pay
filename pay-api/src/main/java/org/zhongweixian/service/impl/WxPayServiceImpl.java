@@ -1,16 +1,11 @@
 package org.zhongweixian.service.impl;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.zhongweixian.CipherType;
 import com.zhongweixian.hmac.HmacUtil;
-import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.zhongweixian.exception.ErrorCode;
 import org.zhongweixian.exception.PayException;
@@ -25,7 +20,6 @@ import org.zhongweixian.service.BaseBayService;
 import org.zhongweixian.util.MapUtil;
 import org.zhongweixian.util.XMLConverUtil;
 
-import java.lang.reflect.Method;
 import java.security.SignatureException;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,7 +32,7 @@ public class WxPayServiceImpl extends BaseBayService {
 
     private final static String PAY_URL = "https://api.mch.weixin.qq.com";
     private final static String SUCCESS = "SUCCESS";
-    private final static String signType = "HMAC-SHA256";
+    private final static String SIGN_TYPE = "HMAC-SHA256";
 
     public WxPayServiceImpl(String wxAppid, String aliPayMerchantId, String aliPaySecret, String aliPayNotifyUrl, String aliPayReturenUrl, String wxPayMerchantid, String wxPaySecret, String wxPayNotifyUrl, String wxPayReturenUrl) {
         super(wxAppid, aliPayMerchantId, aliPaySecret, aliPayNotifyUrl, aliPayReturenUrl, wxPayMerchantid, wxPaySecret, wxPayNotifyUrl, wxPayReturenUrl);
@@ -60,11 +54,11 @@ public class WxPayServiceImpl extends BaseBayService {
             case WX_MICRO:
                 return microPay(payRequest);
             case WX_H5:
-                break;
+                return h5Pay(payRequest);
             case WX_JS:
                 break;
             case WX_QRCODE:
-                break;
+                return qrcodePay(payRequest);
             case WX_APP:
                 return appPay(payRequest);
             default:
@@ -75,6 +69,7 @@ public class WxPayServiceImpl extends BaseBayService {
 
 
     /**
+     * 刷卡支付
      * 步骤1：用户选择刷卡支付付款并打开微信，进入“我”->“钱包”->“收付款”条码界面；
      * <p>
      * 步骤2：收银员在商户系统操作生成支付订单，用户确认支付金额；
@@ -85,12 +80,37 @@ public class WxPayServiceImpl extends BaseBayService {
      * 需要验证密码的交易会弹出密码输入框。支付成功后微信端会弹出成功页面，支付失败会弹出错误提示。
      */
     private PayResponse microPay(PayRequest payRequest) {
+        //二维码中的授权码
+        Object authCode = payRequest.getExt().get("authCode");
+        if(authCode==null){
+            throw new PayException(ErrorCode.PAY_EX_AUTH_CODE_NOT_NULL);
+        }
+        if (String.valueOf(authCode).length()!=18){
+            throw new PayException(ErrorCode.PAY_EX_AUTH_CODE_ERROR);
+        }
         PayResponse response = new PayResponse();
-
+        WxPayRequestXml wxPayRequestXml = new WxPayRequestXml();
+        //通用请求对象转换xml对象
+        obj2Wx(payRequest, wxPayRequestXml);
+        wxPayRequestXml.setAuth_code(String.valueOf(authCode));
+        //签名运算
+        sign(wxPayRequestXml);
+        /**
+         * 支付请求
+         */
+        WxResponse wxResponse = createChange(wxPayRequestXml);
+        Map<String, String> ext = new HashMap<String, String>();
+        ext.put("appId", this.wxAppId);
+        ext.put("mchId", this.wxMchId);
+        ext.put("prepayId", wxResponse.getPrepay_id());
+        //微信支付订单
+        ext.put("transactionId", wxResponse.getTransaction_id());
+        response.setExt(ext);
         return response;
     }
 
     /**
+     * APP支付
      * 步骤1：用户进入商户APP，选择商品下单、确认购买，进入支付环节。商户服务后台生成支付订单，签名后将数据传输到APP端。以微信提供的DEMO为例。
      * <p>
      * 步骤2：用户点击后发起支付操作，进入到微信界面，调起微信支付，出现确认支付界面。
@@ -114,9 +134,9 @@ public class WxPayServiceImpl extends BaseBayService {
          */
         WxResponse wxResponse = createChange(wxPayRequestXml);
         Map<String, String> ext = new HashMap<String, String>();
-        ext.put("appid", this.wxAppid);
-        ext.put("partnerid", this.wxPayMerchantid);
-        ext.put("prepayid", wxResponse.getPrepay_id());
+        ext.put("appId", this.wxAppId);
+        ext.put("mchId", this.wxMchId);
+        ext.put("prepayId", wxResponse.getPrepay_id());
         response.setExt(ext);
         return response;
     }
@@ -134,8 +154,6 @@ public class WxPayServiceImpl extends BaseBayService {
         WxPayRequestXml wxPayRequestXml = new WxPayRequestXml();
         //通用请求对象转换xml对象
         obj2Wx(payRequest, wxPayRequestXml);
-        //设置支付方式
-        wxPayRequestXml.setTrade_type(PayType.WX_H5.getValue());
         //签名运算
         sign(wxPayRequestXml);
         /**
@@ -143,9 +161,10 @@ public class WxPayServiceImpl extends BaseBayService {
          */
         WxResponse wxResponse = createChange(wxPayRequestXml);
         Map<String, String> ext = new HashMap<String, String>();
-        ext.put("appid", this.wxAppid);
-        ext.put("partnerid", this.wxPayMerchantid);
-        ext.put("prepayid", wxResponse.getPrepay_id());
+        ext.put("appId", this.wxAppId);
+        ext.put("mchId", this.wxMchId);
+        ext.put("prepayId", wxResponse.getPrepay_id());
+        ext.put("mwebUrl", wxResponse.getMweb_url());
         response.setExt(ext);
         return response;
     }
@@ -165,8 +184,6 @@ public class WxPayServiceImpl extends BaseBayService {
         WxPayRequestXml wxPayRequestXml = new WxPayRequestXml();
         //通用请求对象转换xml对象
         obj2Wx(payRequest, wxPayRequestXml);
-        //设置支付方式
-        wxPayRequestXml.setTrade_type(PayType.WX_QRCODE.getValue());
         //签名运算
         sign(wxPayRequestXml);
         /**
@@ -174,11 +191,11 @@ public class WxPayServiceImpl extends BaseBayService {
          */
         WxResponse wxResponse = createChange(wxPayRequestXml);
         Map<String, String> ext = new HashMap<String, String>();
-        ext.put("appid", this.wxAppid);
-        ext.put("partnerid", this.wxPayMerchantid);
-        ext.put("prepayid", wxResponse.getPrepay_id());
+        ext.put("appId", this.wxAppId);
+        ext.put("mchId", this.wxMchId);
+        ext.put("prepayId", wxResponse.getPrepay_id());
         //trade_type为NATIVE时有返回，用于生成二维码，展示给用户进行扫码支付
-        ext.put("code_url", wxResponse.getCode_url());
+        ext.put("codeUrl", wxResponse.getCode_url());
         response.setExt(ext);
         return response;
     }
@@ -191,11 +208,11 @@ public class WxPayServiceImpl extends BaseBayService {
      * @param wxPayRequestXml
      */
     private void obj2Wx(PayRequest payRequest, WxPayRequestXml wxPayRequestXml) {
-        wxPayRequestXml.setAppid(this.wxAppid);
-        wxPayRequestXml.setMch_id(this.wxPayMerchantid);
+        wxPayRequestXml.setAppid(this.wxAppId);
+        wxPayRequestXml.setMch_id(this.wxMchId);
         String random = RandomStringUtils.randomAlphabetic(32);
         wxPayRequestXml.setNonce_str(random);
-        wxPayRequestXml.setSign_type(signType);
+        wxPayRequestXml.setSign_type(SIGN_TYPE);
         wxPayRequestXml.setBody(payRequest.getBody());
         wxPayRequestXml.setOut_trade_no(payRequest.getOrderNo());
         wxPayRequestXml.setTotal_fee(payRequest.getAmount().toString());

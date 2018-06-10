@@ -5,13 +5,13 @@ package org.zhongweixian.service;
  */
 public abstract class BaseBayService implements CommonPayService {
 
-    public BaseBayService(String wxAppid, String aliPayMerchantId, String aliPaySecret, String aliPayNotifyUrl, String aliPayReturenUrl, String wxPayMerchantid, String wxPaySecret, String wxPayNotifyUrl, String wxPayReturenUrl) {
-        this.wxAppid = wxAppid;
+    public BaseBayService(String wxAppId, String wxMchId, String aliPaySecret, String aliPayNotifyUrl, String aliPayReturenUrl, String wxPayMerchantid, String wxPaySecret, String wxPayNotifyUrl, String wxPayReturenUrl) {
+        this.wxAppId = wxAppId;
         this.aliPayMerchantId = aliPayMerchantId;
         this.aliPaySecret = aliPaySecret;
         this.aliPayNotifyUrl = aliPayNotifyUrl;
         this.aliPayReturenUrl = aliPayReturenUrl;
-        this.wxPayMerchantid = wxPayMerchantid;
+        this.wxMchId = wxMchId;
         this.wxPaySecret = wxPaySecret;
         this.wxPayNotifyUrl = wxPayNotifyUrl;
         this.wxPayReturenUrl = wxPayReturenUrl;
@@ -50,12 +50,12 @@ public abstract class BaseBayService implements CommonPayService {
     /**
      * 微信应用id
      */
-    public String wxAppid;
+    public String wxAppId;
 
     /**
      * 微信商户id
      */
-    public String wxPayMerchantid;
+    public String wxMchId;
 
     /**
      * 微信公钥

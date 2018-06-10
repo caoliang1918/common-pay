@@ -26,6 +26,11 @@ public class WxResponse {
 
     private String code_url;
 
+    private String transaction_id;
+
+    private String mweb_url;
+
+
     public String getReturn_code() {
         return return_code;
     }
@@ -112,6 +117,22 @@ public class WxResponse {
 
     public void setCode_url(String code_url) {
         this.code_url = code_url;
+    }
+
+    public String getTransaction_id() {
+        return transaction_id;
+    }
+
+    public void setTransaction_id(String transaction_id) {
+        this.transaction_id = transaction_id;
+    }
+
+    public String getMweb_url() {
+        return mweb_url;
+    }
+
+    public void setMweb_url(String mweb_url) {
+        this.mweb_url = mweb_url;
     }
 
     @Override

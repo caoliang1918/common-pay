@@ -11,7 +11,10 @@ public enum ErrorCode {
     PAY_RESPONSE_NULL(20001, "{0}-{1}支付接口返回为空"),
     PAY_RESPONSE_ERROR(20002, "支付失败:{0}"),
     PAY_CHANNEL_ERROR(30001, "支付平台不存在:{0}"),
-    PAY_TYPE_ERROR(30002, "支付类型不存在:{0}");
+    PAY_TYPE_ERROR(30002, "支付类型不存在:{0}"),
+
+    PAY_EX_AUTH_CODE_NOT_NULL(40001, "微信授权码不能为空"),
+    PAY_EX_AUTH_CODE_ERROR(40002, "微信授权码必须为18位");
 
 
     private int code;
