@@ -3,9 +3,9 @@ package org.zhongweixian.service;
 /**
  * Created by caoliang on  6/5/2018
  */
-public abstract class BaseBayService implements CommonPayService {
+public abstract class BasePayService implements CommonPayService {
 
-    public BaseBayService(String wxAppId, String wxMchId, String aliPaySecret, String aliPayNotifyUrl, String aliPayReturenUrl, String wxPayMerchantid, String wxPaySecret, String wxPayNotifyUrl, String wxPayReturenUrl) {
+    public BasePayService(String wxAppId, String wxMchId, String aliPaySecret, String aliPayNotifyUrl, String aliPayReturenUrl, String wxPayMerchantid, String wxPaySecret, String wxPayNotifyUrl, String wxPayReturenUrl) {
         this.wxAppId = wxAppId;
         this.aliPayMerchantId = aliPayMerchantId;
         this.aliPaySecret = aliPaySecret;

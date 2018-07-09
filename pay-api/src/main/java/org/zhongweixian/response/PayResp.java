@@ -5,7 +5,7 @@ import java.util.Map;
 /**
  * Created by caoliang on  6/6/2018
  */
-public class PayResponse {
+public class PayResp {
     private String code = "200";
     private String msg = "SUCCESS";
     private Map<String, String> ext;

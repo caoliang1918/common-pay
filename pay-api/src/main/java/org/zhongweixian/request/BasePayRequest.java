@@ -10,7 +10,7 @@ import java.util.Date;
 /**
  * Created by caoliang on  6/6/2018
  */
-public class BaseRequest implements Serializable {
+public class BasePayRequest implements Serializable {
     /**
      * 支付平台
      **/

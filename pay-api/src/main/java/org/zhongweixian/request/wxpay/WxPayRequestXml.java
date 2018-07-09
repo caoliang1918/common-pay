@@ -1,4 +1,4 @@
-package org.zhongweixian.request.wx;
+package org.zhongweixian.request.wxpay;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -11,13 +11,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  */
 @XmlRootElement(name = "xml")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class WxPayRequestXml {
-    @XmlElement
-    private String appid;
-
-    @XmlElement
-    private String mch_id;
-
+public class WxPayRequestXml extends BaseReqXml {
     @XmlElement
     private String device_info;
 
@@ -93,23 +87,6 @@ public class WxPayRequestXml {
 
     @XmlElement
     private String sub_openid;
-
-
-    public String getAppid() {
-        return appid;
-    }
-
-    public void setAppid(String appid) {
-        this.appid = appid;
-    }
-
-    public String getMch_id() {
-        return mch_id;
-    }
-
-    public void setMch_id(String mch_id) {
-        this.mch_id = mch_id;
-    }
 
     public String getDevice_info() {
         return device_info;

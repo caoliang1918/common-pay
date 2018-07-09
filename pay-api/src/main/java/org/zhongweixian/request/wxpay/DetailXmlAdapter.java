@@ -1,4 +1,4 @@
-package org.zhongweixian.request.wx;
+package org.zhongweixian.request.wxpay;
 
 import com.alibaba.fastjson.JSON;
 

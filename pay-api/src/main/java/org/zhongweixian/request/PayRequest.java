@@ -5,7 +5,7 @@ import java.util.Map;
 /**
  * Created by caoliang on  6/6/2018
  */
-public class PayRequest extends BaseRequest {
+public class PayRequest extends BasePayRequest {
     private Map<String, Object> ext;
 
     public Map<String, Object> getExt() {

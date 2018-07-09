@@ -1,10 +1,8 @@
 package org.zhongweixian.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.zhongweixian.request.PayRequest;
-import org.zhongweixian.response.PayResponse;
-import org.zhongweixian.util.ValidationUtils;
+import org.zhongweixian.response.OrderQueryResp;
+import org.zhongweixian.response.PayResp;
 
 /**
  * Created by caoliang on  6/5/2018
@@ -12,8 +10,34 @@ import org.zhongweixian.util.ValidationUtils;
 public interface CommonPayService {
 
 
-    PayResponse pay(PayRequest payRequest);
+    /**
+     * 统一支付接口
+     *
+     * @param payRequest
+     * @return
+     */
+    PayResp pay(PayRequest payRequest);
 
-    //OrderResponse queryOrder();
+    /**
+     * 支付订单查询接口【商户订单和支付平台订单不能同时为空】
+     *
+     * @param orderNo
+     * @param thirdOrderNo
+     * @return
+     */
+    OrderQueryResp queryOrder(String orderNo, String thirdOrderNo);
+
+    /**
+     * 关闭订单
+     *
+     * @param orderNo
+     * @return
+     */
+    int closeOrder(String orderNo);
+
+
+    int refund(RefundRequest refundRequest);
+
+
 
 }

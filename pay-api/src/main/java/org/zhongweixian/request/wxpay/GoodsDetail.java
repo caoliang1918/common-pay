@@ -1,4 +1,4 @@
-package org.zhongweixian.request.wx;
+package org.zhongweixian.request.wxpay;
 
 /**
  * Created by caoliang on  6/6/2018

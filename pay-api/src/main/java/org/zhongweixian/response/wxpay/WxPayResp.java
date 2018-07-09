@@ -1,9 +1,9 @@
-package org.zhongweixian.response.wx;
+package org.zhongweixian.response.wxpay;
 
 /**
  * Created by caoliang on  6/6/2018
  */
-public class WxResponse {
+public class WxPayResp {
     private String return_code;
 
     private String return_msg;
@@ -137,7 +137,7 @@ public class WxResponse {
 
     @Override
     public String toString() {
-        return "WxResponse{" +
+        return "WxPayResp{" +
                 "return_code='" + return_code + '\'' +
                 ", return_msg='" + return_msg + '\'' +
                 ", appid='" + appid + '\'' +

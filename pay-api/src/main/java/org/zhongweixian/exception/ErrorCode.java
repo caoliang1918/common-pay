@@ -12,9 +12,13 @@ public enum ErrorCode {
     PAY_RESPONSE_ERROR(20002, "支付失败:{0}"),
     PAY_CHANNEL_ERROR(30001, "支付平台不存在:{0}"),
     PAY_TYPE_ERROR(30002, "支付类型不存在:{0}"),
+    PAY_ORDER_NO_NULL(30003 , "商户订单和支付平台订单不能同时为空"),
 
-    PAY_EX_AUTH_CODE_NOT_NULL(40001, "微信授权码不能为空"),
-    PAY_EX_AUTH_CODE_ERROR(40002, "微信授权码必须为18位");
+    ORDER_QUERY_ERRPR(31001 , "订单查询失败"),
+
+    PAY_WX_AUTH_CODE_NOT_NULL(40001, "微信授权码不能为空"),
+    PAY_WX_AUTH_CODE_ERROR(40002, "微信授权码必须为18位");
+
 
 
     private int code;
