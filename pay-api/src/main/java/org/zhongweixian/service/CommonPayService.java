@@ -2,8 +2,10 @@ package org.zhongweixian.service;
 
 import org.zhongweixian.request.PayRequest;
 import org.zhongweixian.request.RefundRequest;
+import org.zhongweixian.response.CloseOrderResp;
 import org.zhongweixian.response.OrderQueryResp;
 import org.zhongweixian.response.PayResp;
+import org.zhongweixian.response.RefundResp;
 
 /**
  * Created by caoliang on  6/5/2018
@@ -34,16 +36,24 @@ public interface CommonPayService {
      * @param orderNo
      * @return
      */
-    int closeOrder(String orderNo);
+    CloseOrderResp closeOrder(String orderNo);
 
 
     /**
      * 退款
+     *
      * @param refundRequest
      * @return
      */
-    int refund(RefundRequest refundRequest);
+    RefundResp refund(RefundRequest refundRequest);
 
 
+    /**
+     * 回调验证【可选】
+     * @param body 回调数据
+     * @param signature 回调签名
+     * @param publickey 支付平台的公钥(公钥签名，私钥加密)
+     */
+    boolean webhooksVerify(String body , String signature , String publickey);
 
 }

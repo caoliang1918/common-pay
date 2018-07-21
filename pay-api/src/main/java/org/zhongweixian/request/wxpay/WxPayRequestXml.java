@@ -15,12 +15,6 @@ public class WxPayRequestXml extends BaseReqXml {
     @XmlElement
     private String device_info;
 
-    @XmlElement
-    private String nonce_str;
-
-    @XmlElement
-    private String auth_code;
-
     /**
      * @since 2.8.5
      */
@@ -30,18 +24,14 @@ public class WxPayRequestXml extends BaseReqXml {
 
     @XmlElement
     @XmlJavaTypeAdapter(value = AdaptorCDATA.class)
-    private String sign;
-
-    @XmlElement
-    private String sign_type;
-
-    @XmlElement
-    @XmlJavaTypeAdapter(value = AdaptorCDATA.class)
     private String body;
 
     @XmlElement
     @XmlJavaTypeAdapter(value = AdaptorCDATA.class)
     private String attach;
+
+    @XmlElement
+    private String auth_code;
 
     @XmlElement
     private String out_trade_no;
@@ -96,21 +86,6 @@ public class WxPayRequestXml extends BaseReqXml {
         this.device_info = device_info;
     }
 
-    public String getNonce_str() {
-        return nonce_str;
-    }
-
-    public void setNonce_str(String nonce_str) {
-        this.nonce_str = nonce_str;
-    }
-
-    public String getSign() {
-        return sign;
-    }
-
-    public void setSign(String sign) {
-        this.sign = sign;
-    }
 
     public String getBody() {
         return body;
@@ -256,13 +231,6 @@ public class WxPayRequestXml extends BaseReqXml {
         this.sub_openid = sub_openid;
     }
 
-    public String getSign_type() {
-        return sign_type;
-    }
-
-    public void setSign_type(String sign_type) {
-        this.sign_type = sign_type;
-    }
 
     public String getAuth_code() {
         return auth_code;

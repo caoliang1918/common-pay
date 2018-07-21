@@ -4,8 +4,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.zhongweixian.exception.ErrorCode;
 import org.zhongweixian.exception.PayException;
 import org.zhongweixian.request.PayRequest;
+import org.zhongweixian.request.RefundRequest;
+import org.zhongweixian.response.CloseOrderResp;
 import org.zhongweixian.response.OrderQueryResp;
 import org.zhongweixian.response.PayResp;
+import org.zhongweixian.response.RefundResp;
 import org.zhongweixian.service.BasePayService;
 
 /**
@@ -28,6 +31,16 @@ public class AliPayService extends BasePayService {
         if (StringUtils.isBlank(orderNo) || StringUtils.isBlank(thirdOrderNo)){
             throw new PayException(ErrorCode.PAY_ORDER_NO_NULL);
         }
+        return null;
+    }
+
+    @Override
+    public CloseOrderResp closeOrder(String orderNo) {
+        return null;
+    }
+
+    @Override
+    public RefundResp refund(RefundRequest refundRequest) {
         return null;
     }
 }

@@ -13,10 +13,16 @@ import org.zhongweixian.http.HttpClient;
 import org.zhongweixian.model.Channel;
 import org.zhongweixian.model.PayType;
 import org.zhongweixian.request.PayRequest;
+import org.zhongweixian.request.RefundRequest;
+import org.zhongweixian.request.wxpay.WxCloseOrderXml;
 import org.zhongweixian.request.wxpay.WxOrderQueryXml;
 import org.zhongweixian.request.wxpay.WxPayRequestXml;
+import org.zhongweixian.request.wxpay.WxRefundXml;
+import org.zhongweixian.response.CloseOrderResp;
 import org.zhongweixian.response.OrderQueryResp;
 import org.zhongweixian.response.PayResp;
+import org.zhongweixian.response.RefundResp;
+import org.zhongweixian.response.wxpay.WxCloseOrderResp;
 import org.zhongweixian.response.wxpay.WxOrderQueryResp;
 import org.zhongweixian.response.wxpay.WxPayResp;
 import org.zhongweixian.service.BasePayService;
@@ -37,6 +43,7 @@ public class WxPayServiceImpl extends BasePayService {
     private final static String WX_PAY_URL = "https://api.mch.weixin.qq.com/pay/unifiedorder";
     private final static String WX_MICRO_PAY_URL = "https://api.mch.weixin.qq.com/pay/micropay";
     private final static String WX_ORDER_QUERY_URL = "https://api.mch.weixin.qq.com/pay/orderquery";
+    private final static String WX_REFUND_URL = "https://api.mch.weixin.qq.com/secapi/pay/refund";
     private final static String SUCCESS = "SUCCESS";
     private final static String SIGN_TYPE = "HMAC-SHA256";
 
@@ -86,22 +93,13 @@ public class WxPayServiceImpl extends BasePayService {
         String random = RandomStringUtils.randomAlphabetic(32);
         orderQueryXml.setNonce_str(random);
         orderQueryXml.setSign_type(SIGN_TYPE);
-        Map<String, String> map = MapUtil.objectToMap(orderQueryXml);
-        map = MapUtil.order(map);
-        try {
-            //最后拼接上key得到stringSignTemp字符串，并对stringSignTemp进行hash运算
-            map.put("key", privateKey);
-            String sign = HmacUtil.hmacSha256Hex(MapUtil.mapJoin(map, false, false), this.privateKey);
-            orderQueryXml.setSign(sign);
-        } catch (SignatureException e) {
-            e.printStackTrace();
-        }
+        orderQueryXml.setSign(sign(orderQueryXml));
         /**
          * 解析XML
          */
         String xmlRequest = XMLConverUtil.convertToXML(orderQueryXml);
         Map<String, String> header = new HashMap<String, String>();
-        header.put(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE);
+        header.put(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_XML_VALUE);
         String result = new HttpClient().postExchange(WX_ORDER_QUERY_URL, MediaType.TEXT_XML, xmlRequest);
         if (StringUtils.isBlank(result)) {
             throw new PayException(ErrorCode.PAY_RESPONSE_NULL);
@@ -129,6 +127,80 @@ public class WxPayServiceImpl extends BasePayService {
         ext.put("trade_state_desc", wxOrderQueryResp.getTrade_state_desc());
         orderQueryResp.setExt(ext);
         return orderQueryResp;
+    }
+
+    @Override
+    public CloseOrderResp closeOrder(String orderNo) {
+        WxCloseOrderXml wxCloseOrderXml = new WxCloseOrderXml();
+        wxCloseOrderXml.setAppid(wxAppId);
+        wxCloseOrderXml.setMch_id(wxMchId);
+        wxCloseOrderXml.setNonce_str(RandomStringUtils.randomAlphabetic(32));
+        wxCloseOrderXml.setOut_trade_no(orderNo);
+        wxCloseOrderXml.setSign_type(SIGN_TYPE);
+        wxCloseOrderXml.setSign(sign(wxCloseOrderXml));
+        /**
+         * 构建XML
+         */
+        String xmlRequest = XMLConverUtil.convertToXML(wxCloseOrderXml);
+        Map<String, String> header = new HashMap<String, String>();
+        header.put(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_XML_VALUE);
+        String result = new HttpClient().postExchange(WX_ORDER_QUERY_URL, MediaType.TEXT_XML, xmlRequest);
+        if (StringUtils.isBlank(result)) {
+            throw new PayException(ErrorCode.PAY_RESPONSE_NULL);
+        }
+        /**
+         * 解析XML
+         */
+        WxCloseOrderResp wxCloseOrderResp = XMLConverUtil.convertToObject(WxCloseOrderResp.class, result);
+        CloseOrderResp closeOrderResp = new CloseOrderResp();
+        closeOrderResp.setOrderNo(orderNo);
+        if (!SUCCESS.equals(wxCloseOrderResp.getReturn_code())) {
+            logger.error("orderQuery error :{}", wxCloseOrderResp);
+            closeOrderResp.setCode("500");
+            closeOrderResp.setErrorCode(wxCloseOrderResp.getErr_code());
+            closeOrderResp.setErrorDes(wxCloseOrderResp.getErr_code_des());
+            closeOrderResp.setMsg(wxCloseOrderResp.getErr_code_des());
+            return closeOrderResp;
+        }
+        return closeOrderResp;
+    }
+
+    @Override
+    public RefundResp refund(RefundRequest refundRequest) {
+        WxRefundXml wxRefundXml = new WxRefundXml();
+        wxRefundXml.setAppid(wxAppId);
+        wxRefundXml.setMch_id(wxMchId);
+        wxRefundXml.setOut_trade_no(refundRequest.getOrderNo());
+        wxRefundXml.setOut_refund_no(refundRequest.getRefundNo());
+        wxRefundXml.setNotify_url(refundRequest.getNotifyUrl());
+        wxRefundXml.setRefund_desc(refundRequest.getRefundDesc());
+        wxRefundXml.setRefund_fee_type(refundRequest.getFeeType());
+        wxRefundXml.setRefund_fee(refundRequest.getRefundFee());
+        wxRefundXml.setTotal_fee(refundRequest.getTotalFee());
+
+        /**
+         * 构建XML
+         */
+        String xmlRequest = XMLConverUtil.convertToXML(wxRefundXml);
+        Map<String, String> header = new HashMap<String, String>();
+        header.put(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_XML_VALUE);
+        String result = new HttpClient().postExchange(WX_REFUND_URL, MediaType.TEXT_XML, xmlRequest);
+        if (StringUtils.isBlank(result)) {
+            throw new PayException(ErrorCode.ORDER_REFUND_ERROR);
+        }
+        /**
+         * 解析XML
+         */
+        WxCloseOrderResp wxCloseOrderResp = XMLConverUtil.convertToObject(WxCloseOrderResp.class, result);
+        CloseOrderResp closeOrderResp = new CloseOrderResp();
+
+
+        return null;
+    }
+
+    @Override
+    public boolean webhooksVerify(String body, String signature, String publickey) {
+        return false;
     }
 
     /**
@@ -290,21 +362,22 @@ public class WxPayServiceImpl extends BasePayService {
 
     /**
      * 单向签名
-     * https://pay.weixin.qq.com/wiki/doc/api/app/app.php?chapter=4_3
      *
-     * @param wxPayRequestXml
+     * @param obj
+     * @return
      */
-    void sign(WxPayRequestXml wxPayRequestXml) {
-        Map<String, String> map = MapUtil.objectToMap(wxPayRequestXml);
+    String sign(Object obj) {
+        Map<String, String> map = MapUtil.objectToMap(obj);
         map = MapUtil.order(map);
         try {
             //最后拼接上key得到stringSignTemp字符串，并对stringSignTemp进行hash运算
             map.put("key", privateKey);
             String sign = HmacUtil.hmacSha256Hex(MapUtil.mapJoin(map, false, false), this.privateKey);
-            wxPayRequestXml.setSign(sign);
+            return sign;
         } catch (SignatureException e) {
             e.printStackTrace();
         }
+        return null;
     }
 
     /**
@@ -316,7 +389,7 @@ public class WxPayServiceImpl extends BasePayService {
     private WxPayResp createCharge(WxPayRequestXml wxPayRequestXml) {
         String xmlRequest = XMLConverUtil.convertToXML(wxPayRequestXml);
         Map<String, String> header = new HashMap<String, String>();
-        header.put(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_XML_VALUE);
+        header.put(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_XML_VALUE);
         String result = new HttpClient().postExchange(wxPayRequestXml.getRequestUrl(), MediaType.TEXT_XML, xmlRequest);
         if (StringUtils.isBlank(result)) {
             throw new PayException(ErrorCode.PAY_RESPONSE_NULL);
