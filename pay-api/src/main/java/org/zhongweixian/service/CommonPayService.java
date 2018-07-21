@@ -1,6 +1,7 @@
 package org.zhongweixian.service;
 
 import org.zhongweixian.request.PayRequest;
+import org.zhongweixian.request.RefundRequest;
 import org.zhongweixian.response.OrderQueryResp;
 import org.zhongweixian.response.PayResp;
 
@@ -36,6 +37,11 @@ public interface CommonPayService {
     int closeOrder(String orderNo);
 
 
+    /**
+     * 退款
+     * @param refundRequest
+     * @return
+     */
     int refund(RefundRequest refundRequest);
 
 
