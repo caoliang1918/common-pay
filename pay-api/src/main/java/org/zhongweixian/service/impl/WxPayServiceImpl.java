@@ -25,6 +25,7 @@ import org.zhongweixian.response.RefundResp;
 import org.zhongweixian.response.wxpay.WxCloseOrderResp;
 import org.zhongweixian.response.wxpay.WxOrderQueryResp;
 import org.zhongweixian.response.wxpay.WxPayResp;
+import org.zhongweixian.response.wxpay.WxRefundResp;
 import org.zhongweixian.service.BasePayService;
 import org.zhongweixian.util.DateUtil;
 import org.zhongweixian.util.MapUtil;
@@ -177,7 +178,6 @@ public class WxPayServiceImpl extends BasePayService {
         wxRefundXml.setRefund_fee_type(refundRequest.getFeeType());
         wxRefundXml.setRefund_fee(refundRequest.getRefundFee());
         wxRefundXml.setTotal_fee(refundRequest.getTotalFee());
-
         /**
          * 构建XML
          */
@@ -191,11 +191,22 @@ public class WxPayServiceImpl extends BasePayService {
         /**
          * 解析XML
          */
-        WxCloseOrderResp wxCloseOrderResp = XMLConverUtil.convertToObject(WxCloseOrderResp.class, result);
-        CloseOrderResp closeOrderResp = new CloseOrderResp();
-
-
-        return null;
+        WxRefundResp wxRefundResp = XMLConverUtil.convertToObject(WxRefundResp.class, result);
+        RefundResp refundResp = new RefundResp();
+        if (!SUCCESS.equals(wxRefundResp.getReturn_code())) {
+            refundResp.setCode("500");
+            refundResp.setErrorCode(wxRefundResp.getErr_code());
+            refundResp.setMsg(wxRefundResp.getErr_code_des());
+            return refundResp;
+        }
+        refundResp.setRefundId(wxRefundResp.getRefund_id());
+        refundResp.setRefundFee(Long.parseLong(wxRefundResp.getRefund_fee()));
+        refundResp.setTradeNo(wxRefundResp.getOut_trade_no());
+        refundResp.setRefundNo(wxRefundResp.getOut_refund_no());
+        refundResp.setTotalFee(Long.parseLong(wxRefundResp.getTotal_fee()));
+        //第三方订单号
+        refundResp.setTransactionId(wxRefundResp.getTransaction_id());
+        return refundResp;
     }
 
     @Override

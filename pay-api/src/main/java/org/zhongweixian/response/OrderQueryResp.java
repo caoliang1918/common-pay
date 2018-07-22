@@ -7,15 +7,7 @@ import java.util.Map;
  * @author : caoliang1918@gmail.com
  * @date :   2018/6/13 20:26
  */
-public class OrderQueryResp {
-    /**
-     * 状态码
-     */
-    private String code = "200";
-    /**
-     * 代码描述
-     */
-    private String msg = "SUCCESS";
+public class OrderQueryResp extends BaseResp{
     /**
      * 商户订单号
      */
@@ -49,22 +41,6 @@ public class OrderQueryResp {
      * 扩展数据
      */
     private Map<String, Object> ext;
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getMsg() {
-        return msg;
-    }
-
-    public void setMsg(String msg) {
-        this.msg = msg;
-    }
 
     public String getOrderNo() {
         return orderNo;

@@ -3,16 +3,7 @@ package org.zhongweixian.response;
 /**
  * Created by caoliang on 2018/7/21
  */
-public class CloseOrderResp {
-
-    /**
-     * 状态码
-     */
-    private String code = "200";
-    /**
-     * 代码描述
-     */
-    private String msg = "SUCCESS";
+public class CloseOrderResp extends BaseResp {
     /**
      * 商户订单号
      */
@@ -20,25 +11,7 @@ public class CloseOrderResp {
 
     private String errorCode;
 
-
     private String errorDes;
-
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getMsg() {
-        return msg;
-    }
-
-    public void setMsg(String msg) {
-        this.msg = msg;
-    }
 
     public String getOrderNo() {
         return orderNo;

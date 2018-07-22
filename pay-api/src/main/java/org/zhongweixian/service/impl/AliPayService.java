@@ -43,4 +43,11 @@ public class AliPayService extends BasePayService {
     public RefundResp refund(RefundRequest refundRequest) {
         return null;
     }
+
+    @Override
+    public boolean webhooksVerify(String body, String signature, String publickey) {
+        return false;
+    }
+
+
 }
