@@ -98,11 +98,5 @@ public class OrderQueryResp extends BaseResp{
         this.feeType = feeType;
     }
 
-    public Map<String, Object> getExt() {
-        return ext;
-    }
 
-    public void setExt(Map<String, Object> ext) {
-        this.ext = ext;
-    }
 }

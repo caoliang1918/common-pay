@@ -1,6 +1,5 @@
 package org.zhongweixian.util;
 
-import com.sun.xml.internal.bind.marshaller.CharacterEscapeHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.*;
@@ -30,6 +29,8 @@ public class XMLConverUtil {
     private static Map<Class<?>, Marshaller> M_MAP;
 
     private static Map<Class<?>, Unmarshaller> U_MAP;
+
+    private final static String CHAT_SET = "UTF-8";
 
     static {
         M_MAP = new HashMap<Class<?>, Marshaller>();
@@ -107,14 +108,18 @@ public class XMLConverUtil {
             if (!M_MAP.containsKey(object.getClass())) {
                 JAXBContext jaxbContext = JAXBContext.newInstance(object.getClass());
                 Marshaller marshaller = jaxbContext.createMarshaller();
+                marshaller.setProperty(Marshaller.JAXB_ENCODING, CHAT_SET);
+                //是否省略xml头信息，默认false
+                marshaller.setProperty(Marshaller.JAXB_FRAGMENT, true);
+                //格式化生成的xml串
                 marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
                 //设置CDATA输出字符
-                marshaller.setProperty(CharacterEscapeHandler.class.getName(), new CharacterEscapeHandler() {
+                /*marshaller.setProperty(CharacterEscapeHandler.class.getName(), new CharacterEscapeHandler() {
                     @Override
                     public void escape(char[] ac, int i, int j, boolean flag, Writer writer) throws IOException {
                         writer.write(ac, i, j);
                     }
-                });
+                });*/
                 M_MAP.put(object.getClass(), marshaller);
             }
             StringWriter stringWriter = new StringWriter();

@@ -118,7 +118,7 @@ public class WxPayServiceImpl extends BasePayService {
         orderQueryResp.setThirdOrderNo(wxOrderQueryResp.getTransaction_id());
         orderQueryResp.setUts(DateUtil.parseDate(wxOrderQueryResp.getTime_end(), DateUtil.DATETIME_FORMAT_S));
         orderQueryResp.setState(wxOrderQueryResp.getTrade_state());
-        Map<String, Object> ext = new HashMap<String, Object>();
+        Map<String, String> ext = new HashMap<String, String>();
         ext.put("device_info", wxOrderQueryResp.getDevice_info());
         ext.put("openid", wxOrderQueryResp.getOpenid());
         ext.put("is_subscrbe", wxOrderQueryResp.getIs_subscrbe());

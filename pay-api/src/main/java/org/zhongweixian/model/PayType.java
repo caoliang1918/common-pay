@@ -2,9 +2,20 @@ package org.zhongweixian.model;
 
 public enum PayType {
 
-    ALI_H5(""),
-    ALI_WEB(""),
-    ALI_APP(""),
+    /**
+     *手机网站支付
+     */
+    ALI_H5("alipay.trade.wap.pay"),
+
+    /**
+     * 支付宝电脑网站支付
+     */
+    ALI_WEB("alipay.trade.page.pay"),
+
+    /**
+     * APP支付
+     */
+    ALI_APP("alipay.trade.app.pay"),
 
     /**
      * 刷卡支付
