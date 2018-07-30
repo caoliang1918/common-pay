@@ -48,8 +48,9 @@ public class WxPayServiceImpl extends BasePayService {
     private final static String SUCCESS = "SUCCESS";
     private final static String SIGN_TYPE = "HMAC-SHA256";
 
-    public WxPayServiceImpl(String wxAppid, String aliPayMerchantId, String aliPaySecret, String aliPayNotifyUrl, String aliPayReturenUrl, String wxPayMerchantid, String wxPaySecret, String wxPayNotifyUrl, String wxPayReturenUrl) {
-        super(wxAppid, aliPayMerchantId, aliPaySecret, aliPayNotifyUrl, aliPayReturenUrl, wxPayMerchantid, wxPaySecret, wxPayNotifyUrl, wxPayReturenUrl);
+
+    public WxPayServiceImpl(String wxAppId, String wxMchId, String wxPaySecret, String aliPayMerchantId, String aliPaySecret) {
+        super(wxAppId, wxMchId, wxPaySecret, aliPayMerchantId, aliPaySecret);
     }
 
 
@@ -70,7 +71,7 @@ public class WxPayServiceImpl extends BasePayService {
             case WX_H5:
                 return h5Pay(payRequest);
             case WX_JS:
-                break;
+                return jsPay(payRequest);
             case WX_QRCODE:
                 return qrcodePay(payRequest);
             case WX_APP:
@@ -78,7 +79,6 @@ public class WxPayServiceImpl extends BasePayService {
             default:
                 throw new PayException(ErrorCode.PAY_TYPE_ERROR, payRequest.getPayType().getValue());
         }
-        return null;
     }
 
     @Override
@@ -367,7 +367,9 @@ public class WxPayServiceImpl extends BasePayService {
         wxPayRequestXml.setOut_trade_no(payRequest.getOrderNo());
         wxPayRequestXml.setTotal_fee(payRequest.getAmount().toString());
         wxPayRequestXml.setSpbill_create_ip(payRequest.getClientIp());
-        wxPayRequestXml.setNotify_url(this.wxPayNotifyUrl);
+        if (payRequest.getExt().containsKey("scene_info")) {
+            wxPayRequestXml.setScene_info(payRequest.getExt().get("scene_info"));
+        }
     }
 
 
@@ -414,5 +416,9 @@ public class WxPayServiceImpl extends BasePayService {
         return wxResponse;
     }
 
+    private PayResp jsPay(PayRequest payRequest) {
+
+        return null;
+    }
 
 }

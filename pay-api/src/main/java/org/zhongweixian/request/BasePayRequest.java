@@ -1,6 +1,7 @@
 package org.zhongweixian.request;
 
 import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.constraints.NotEmpty;
 import org.zhongweixian.model.Channel;
 import org.zhongweixian.model.PayType;
 
@@ -60,9 +61,18 @@ public class BasePayRequest implements Serializable {
      **/
     @NotBlank(message = "随机字符串不能为空")
     private String random;
+
+    /**
+     * 后端通知地址
+     */
+    private String notifyUrl;
+
+    /**
+     * 前端返回地址
+     */
+    private String returnUrl;
     /** **/
     private Date cts;
-
 
     public Channel getChannel() {
         return channel;
@@ -142,6 +152,22 @@ public class BasePayRequest implements Serializable {
 
     public void setRandom(String random) {
         this.random = random;
+    }
+
+    public String getNotifyUrl() {
+        return notifyUrl;
+    }
+
+    public void setNotifyUrl(String notifyUrl) {
+        this.notifyUrl = notifyUrl;
+    }
+
+    public String getReturnUrl() {
+        return returnUrl;
+    }
+
+    public void setReturnUrl(String returnUrl) {
+        this.returnUrl = returnUrl;
     }
 
     public Date getCts() {

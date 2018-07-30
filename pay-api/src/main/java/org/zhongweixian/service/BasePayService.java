@@ -5,16 +5,12 @@ package org.zhongweixian.service;
  */
 public abstract class BasePayService implements CommonPayService {
 
-    public BasePayService(String wxAppId, String wxMchId, String aliPaySecret, String aliPayNotifyUrl, String aliPayReturenUrl, String wxPayMerchantid, String wxPaySecret, String wxPayNotifyUrl, String wxPayReturenUrl) {
+    public BasePayService(String wxAppId, String wxMchId, String wxPaySecret, String aliPayMerchantId, String aliPaySecret) {
         this.wxAppId = wxAppId;
         this.aliPayMerchantId = aliPayMerchantId;
         this.aliPaySecret = aliPaySecret;
-        this.aliPayNotifyUrl = aliPayNotifyUrl;
-        this.aliPayReturenUrl = aliPayReturenUrl;
         this.wxMchId = wxMchId;
         this.wxPaySecret = wxPaySecret;
-        this.wxPayNotifyUrl = wxPayNotifyUrl;
-        this.wxPayReturenUrl = wxPayReturenUrl;
     }
 
     /**
@@ -32,20 +28,6 @@ public abstract class BasePayService implements CommonPayService {
      */
     public String privateKey;
 
-    /**
-     * 支付宝网关
-     */
-    public String aliPayGateWay = "https://mapi.alipay.com/gateway.do?";
-
-    /**
-     * 支付宝回调地址
-     */
-    public String aliPayNotifyUrl;
-
-    /**
-     * 支付宝前端页面跳转地址
-     */
-    public String aliPayReturenUrl;
 
     /**
      * 微信应用id
@@ -62,19 +44,5 @@ public abstract class BasePayService implements CommonPayService {
      */
     public String wxPaySecret;
 
-    /**
-     * 微信支付网关
-     */
-    public String wxPayGateWay = "https://gw.tenpay.com/gateway/pay.htm";
-
-    /**
-     * 微信回调地址
-     */
-    public String wxPayNotifyUrl;
-
-    /**
-     * 微信前端页面跳转地址
-     */
-    public String wxPayReturenUrl;
 
 }

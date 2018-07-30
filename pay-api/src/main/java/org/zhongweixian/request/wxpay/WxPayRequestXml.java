@@ -78,6 +78,10 @@ public class WxPayRequestXml extends BaseReqXml {
     @XmlElement
     private String sub_openid;
 
+    @XmlElement
+    @XmlJavaTypeAdapter(value = DetailXmlAdapter.class)
+    private String scene_info;
+
     public String getDevice_info() {
         return device_info;
     }
@@ -238,5 +242,13 @@ public class WxPayRequestXml extends BaseReqXml {
 
     public void setAuth_code(String auth_code) {
         this.auth_code = auth_code;
+    }
+
+    public String getScene_info() {
+        return scene_info;
+    }
+
+    public void setScene_info(String scene_info) {
+        this.scene_info = scene_info;
     }
 }
