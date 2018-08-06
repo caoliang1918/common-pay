@@ -10,7 +10,16 @@ public class AliPayRequest implements Serializable {
     /**
      * 前端返回地址
      */
-    private String returnUrl;
+    private String app_id;
+
+    private String method;
+
+    private String charset;
+
+    private String sign_type;
+
+    private String timestamp;
+
     /**
      * 后端通知地址
      */
@@ -18,29 +27,11 @@ public class AliPayRequest implements Serializable {
     /**
      * 参数
      */
-    private String bizContent;
+    private String biz_content;
 
-    public String getReturnUrl() {
-        return returnUrl;
-    }
+    private String sign;
 
-    public void setReturnUrl(String returnUrl) {
-        this.returnUrl = returnUrl;
-    }
+    private String version;
 
-    public String getNotifyUrl() {
-        return notifyUrl;
-    }
 
-    public void setNotifyUrl(String notifyUrl) {
-        this.notifyUrl = notifyUrl;
-    }
-
-    public String getBizContent() {
-        return bizContent;
-    }
-
-    public void setBizContent(String bizContent) {
-        this.bizContent = bizContent;
-    }
 }
