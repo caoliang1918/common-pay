@@ -46,6 +46,11 @@ public class BasePayRequest implements Serializable {
      **/
     @NotBlank(message = "商品描述不能为空")
     private String body;
+
+    /**
+     * 详情
+     */
+    private String detail;
     /**
      * 签名
      **/
@@ -176,5 +181,13 @@ public class BasePayRequest implements Serializable {
 
     public void setCts(Date cts) {
         this.cts = cts;
+    }
+
+    public String getDetail() {
+        return detail;
+    }
+
+    public void setDetail(String detail) {
+        this.detail = detail;
     }
 }

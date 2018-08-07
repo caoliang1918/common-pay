@@ -49,8 +49,8 @@ public class WxPayServiceImpl extends BasePayService {
     private final static String SIGN_TYPE = "HMAC-SHA256";
 
 
-    public WxPayServiceImpl(String wxAppId, String wxMchId, String wxPaySecret, String aliPayMerchantId, String aliPaySecret) {
-        super(wxAppId, wxMchId, wxPaySecret, aliPayMerchantId, aliPaySecret);
+    public WxPayServiceImpl(String wxAppId, String wxMchId, String wxPaySecret, String aliPayMerchantId, String aliPaySecret, String privateKey) {
+        super(wxAppId, wxMchId, wxPaySecret, aliPayMerchantId, aliPaySecret, privateKey);
     }
 
 

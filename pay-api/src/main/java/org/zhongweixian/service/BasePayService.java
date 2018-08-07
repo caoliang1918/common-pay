@@ -5,12 +5,13 @@ package org.zhongweixian.service;
  */
 public abstract class BasePayService implements CommonPayService {
 
-    public BasePayService(String wxAppId, String wxMchId, String wxPaySecret, String aliPayMerchantId, String aliPaySecret) {
+    public BasePayService(String wxAppId, String wxMchId, String wxPaySecret, String aliPayMerchantId, String aliPaySecret , String privateKey) {
         this.wxAppId = wxAppId;
         this.aliPayMerchantId = aliPayMerchantId;
         this.aliPaySecret = aliPaySecret;
         this.wxMchId = wxMchId;
         this.wxPaySecret = wxPaySecret;
+        this.privateKey = privateKey;
     }
 
     /**

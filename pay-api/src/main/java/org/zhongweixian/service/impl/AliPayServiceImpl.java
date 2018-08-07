@@ -1,10 +1,15 @@
 package org.zhongweixian.service.impl;
 
-import com.alibaba.fastjson.JSONObject;
 import com.alipay.api.AlipayApiException;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.DefaultAlipayClient;
+import com.alipay.api.domain.AlipayTradeAppPayModel;
+import com.alipay.api.request.AlipayTradeAppPayRequest;
 import com.alipay.api.request.AlipayTradePagePayRequest;
+import com.alipay.api.request.AlipayTradeQueryRequest;
+import com.alipay.api.request.AlipayTradeWapPayRequest;
+import com.alipay.api.response.AlipayTradeAppPayResponse;
+import com.alipay.api.response.AlipayTradeQueryResponse;
 import com.zhongweixian.rsa.RsaUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
@@ -23,15 +28,18 @@ import org.zhongweixian.response.RefundResp;
 import org.zhongweixian.service.BasePayService;
 import org.zhongweixian.util.MapUtil;
 
+import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Created by caoliang on  6/5/2018
+ * <p>
+ * 因为支付宝没有标准的rest接口,所以就直接用sdk了
  */
 public class AliPayServiceImpl extends BasePayService {
     private Logger logger = LoggerFactory.getLogger(AliPayServiceImpl.class);
     private final static String ALI_PAY_URL = "https://openapi.alipay.com/gateway.do";
-    private final static String APP_PAY = "alipay.trade.wap.pay";
     private final static String CHART_SET = "UTF-8";
     private final static String FORMAT = "JSON";
     private final static String SUCCESS = "SUCCESS";
@@ -41,9 +49,9 @@ public class AliPayServiceImpl extends BasePayService {
     private AlipayClient alipayClient = null;
 
 
-    public AliPayServiceImpl(String wxAppId, String wxMchId, String wxPaySecret, String aliPayMerchantId, String aliPaySecret) {
-        super(wxAppId, wxMchId, wxPaySecret, aliPayMerchantId, aliPaySecret);
-        alipayClient = new DefaultAlipayClient(ALI_PAY_URL, aliPayMerchantId, aliPaySecret, FORMAT, CHART_SET);
+    public AliPayServiceImpl(String wxAppId, String wxMchId, String wxPaySecret, String aliPayMerchantId, String aliPaySecret, String privateKey) {
+        super(wxAppId, wxMchId, wxPaySecret, aliPayMerchantId, aliPaySecret, privateKey);
+        alipayClient = new DefaultAlipayClient(ALI_PAY_URL, aliPayMerchantId, privateKey, FORMAT, CHART_SET, aliPaySecret, SIGN_TYPE);
     }
 
 
@@ -65,77 +73,93 @@ public class AliPayServiceImpl extends BasePayService {
     }
 
     /**
+     * 手机APP支付
+     *
      * @param payRequest
      * @return
      */
     private PayResp appPay(PayRequest payRequest) {
-        JSONObject jsonObject = new JSONObject();
-
-
-        return null;
+        BigDecimal bigDecimal = new BigDecimal(payRequest.getAmount());
+        bigDecimal = bigDecimal.divide(new BigDecimal(100));
+        AlipayTradeAppPayRequest request = new AlipayTradeAppPayRequest();
+        AlipayTradeAppPayModel model = new AlipayTradeAppPayModel();
+        model.setBody(payRequest.getDetail());
+        model.setSubject(payRequest.getBody());
+        model.setOutTradeNo(payRequest.getOrderNo());
+        model.setTimeoutExpress("30m");
+        model.setTotalAmount(bigDecimal.toString());
+        model.setProductCode("QUICK_MSECURITY_PAY");
+        request.setBizModel(model);
+        request.setNotifyUrl(payRequest.getNotifyUrl());
+        AlipayTradeAppPayResponse response = null;
+        try {
+            //这里和普通的接口调用不同，使用的是sdkExecute
+            response = alipayClient.sdkExecute(request);
+            System.out.println(response.getBody());
+        } catch (AlipayApiException e) {
+            e.printStackTrace();
+        }
+        logger.debug("alipay appPay response : {}", response.getBody());
+        PayResp resp = new PayResp();
+        resp.setMsg(response.getBody());
+        return resp;
     }
 
 
     /**
+     * 手机网站支付
+     *
      * @param payRequest
      * @return
      */
     private PayResp h5Pay(PayRequest payRequest) {
-
+        BigDecimal bigDecimal = new BigDecimal(payRequest.getAmount());
+        bigDecimal = bigDecimal.divide(new BigDecimal(100));
+        AlipayTradeWapPayRequest alipayRequest = new AlipayTradeWapPayRequest();
+        alipayRequest.setReturnUrl(payRequest.getReturnUrl());
+        alipayRequest.setNotifyUrl(payRequest.getNotifyUrl());
+        alipayRequest.setBizContent("{" +
+                "out_trade_no:" + payRequest.getOrderNo() + "," +
+                "total_amount:" + bigDecimal + "," +
+                "subject:" + payRequest.getBody() + "," +
+                "product_code:QUICK_WAP_WAY" +
+                "}");
+        try {
+            String form = alipayClient.pageExecute(alipayRequest).getBody();
+        } catch (AlipayApiException e) {
+            e.printStackTrace();
+        }
         return null;
     }
 
     /**
+     * PC电脑端支付
+     *
      * @param payRequest
      * @return
      */
     private PayResp webPay(PayRequest payRequest) {
+        //货币转换
+        BigDecimal bigDecimal = new BigDecimal(payRequest.getAmount());
+        bigDecimal = bigDecimal.divide(new BigDecimal(100));
         AlipayTradePagePayRequest alipayRequest = new AlipayTradePagePayRequest();
         alipayRequest.setReturnUrl(payRequest.getReturnUrl());
         alipayRequest.setNotifyUrl(payRequest.getNotifyUrl());
         alipayRequest.setBizContent("{" +
-                "    \"out_trade_no\":" + payRequest.getOrderNo() + "," +
-                "    \"product_code\":\"FAST_INSTANT_TRADE_PAY\"," +
-                "    \"total_amount\":" + payRequest.getAmount() + "," +
-                "    \"subject\":" + payRequest.getBody() + "," +
-                "    \"body\":" + payRequest.getBody() + "," +
-                "    \"extend_params\":{" +
-                "    }" +
-                "  }");//填充业务参数
+                "out_trade_no:" + payRequest.getOrderNo() + "," +
+                "product_code:FAST_INSTANT_TRADE_PAY," +
+                "total_amount:" + bigDecimal.toString() + "," +
+                "subject:" + payRequest.getBody() + "," +
+                "body:" + payRequest.getDetail() +
+                "}");
         String form = "";
         try {
-            form = alipayClient.pageExecute(alipayRequest).getBody(); //调用SDK生成表单
+            form = alipayClient.pageExecute(alipayRequest).getBody();
         } catch (AlipayApiException e) {
             e.printStackTrace();
         }
-        logger.debug("FAST_INSTANT_TRADE_PAY : {}  ", form);
+        logger.debug("alipay webPay response : {}  ", form);
         return null;
-    }
-
-    /**
-     * biz_content只是业务数据
-     *
-     * @param bizContent
-     * @param params
-     * @param payRequest
-     * @return
-     */
-    private AliPayRequest build(String bizContent, Map<String, String> params, PayRequest payRequest) {
-        params.put("app_id", this.aliPayMerchantId);
-        params.put("charset", CHART_SET);
-        params.put("sign_type", SIGN_TYPE);
-        params.put("out_trade_no", payRequest.getOrderNo());
-        params.put("timestamp", new DateTime().toString(DATE_FORMAT));
-        params.put("version", VERSION);
-        params.put("biz_content", bizContent);
-
-        String str = MapUtil.mapJoin(params, false, false);
-        String sign = RsaUtil.sign(str, privateKey);
-
-        AliPayRequest aliPayRequest = new AliPayRequest();
-
-
-        return aliPayRequest;
     }
 
 
@@ -144,7 +168,30 @@ public class AliPayServiceImpl extends BasePayService {
         if (StringUtils.isBlank(orderNo) || StringUtils.isBlank(thirdOrderNo)) {
             throw new PayException(ErrorCode.PAY_ORDER_NO_NULL);
         }
-        return null;
+        AlipayTradeQueryRequest request = new AlipayTradeQueryRequest();
+        request.setBizContent("{" +
+                "out_trade_no:" + orderNo + "," +
+                "trade_no:" + thirdOrderNo + "" +
+                "}");
+        AlipayTradeQueryResponse response = null;
+        try {
+            response = alipayClient.execute(request);
+        } catch (AlipayApiException e) {
+            e.printStackTrace();
+        }
+        OrderQueryResp queryResp = new OrderQueryResp();
+        queryResp.setOrderNo(response.getOutTradeNo());
+        queryResp.setThirdOrderNo(response.getTradeNo());
+        //支付宝的单位是元
+        BigDecimal bigDecimal = new BigDecimal(response.getTotalAmount());
+        bigDecimal = bigDecimal.multiply(new BigDecimal(100));
+        queryResp.setAmount(bigDecimal.longValue());
+        Map<String, String> ext = new HashMap<String, String>();
+        //买家支付宝账号
+        ext.put("customerId", response.getBuyerLogonId());
+        queryResp.setExt(ext);
+
+        return queryResp;
     }
 
     @Override
@@ -161,6 +208,5 @@ public class AliPayServiceImpl extends BasePayService {
     public boolean webhooksVerify(String body, String signature, String publickey) {
         return false;
     }
-
 
 }
