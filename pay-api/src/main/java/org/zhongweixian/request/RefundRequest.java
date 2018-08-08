@@ -18,15 +18,15 @@ public class RefundRequest implements Serializable {
     @NotBlank(message = "支付平台不能为空")
     private Channel channel;
     /**
-     * 支付金额
-     **/
-    @NotBlank(message = "金额不能为空")
-    private Long amount;
-    /**
      * 订单号
      **/
     @NotBlank(message = "商户订单号不能为空")
     private String orderNo;
+
+    /**
+     * 交易平台单号[可选值]
+     */
+    private String thirdOrderNo;
 
     @NotBlank(message = "商户退款单号不能为空")
     private String refundNo;
@@ -36,7 +36,6 @@ public class RefundRequest implements Serializable {
 
     @NotBlank(message = "退款金额不能为空")
     private Long refundFee;
-
 
     /**
      * 货币种类
@@ -59,14 +58,6 @@ public class RefundRequest implements Serializable {
 
     public void setChannel(Channel channel) {
         this.channel = channel;
-    }
-
-    public Long getAmount() {
-        return amount;
-    }
-
-    public void setAmount(Long amount) {
-        this.amount = amount;
     }
 
     public String getOrderNo() {
@@ -123,5 +114,13 @@ public class RefundRequest implements Serializable {
 
     public void setNotifyUrl(String notifyUrl) {
         this.notifyUrl = notifyUrl;
+    }
+
+    public String getThirdOrderNo() {
+        return thirdOrderNo;
+    }
+
+    public void setThirdOrderNo(String thirdOrderNo) {
+        this.thirdOrderNo = thirdOrderNo;
     }
 }

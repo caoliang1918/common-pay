@@ -120,7 +120,7 @@ public class WxPayServiceImpl extends BasePayService {
         orderQueryResp.setState(wxOrderQueryResp.getTrade_state());
         Map<String, String> ext = new HashMap<String, String>();
         ext.put("device_info", wxOrderQueryResp.getDevice_info());
-        ext.put("openid", wxOrderQueryResp.getOpenid());
+        ext.put("customerId", wxOrderQueryResp.getOpenid());
         ext.put("is_subscrbe", wxOrderQueryResp.getIs_subscrbe());
         ext.put("trade_type", wxOrderQueryResp.getTrade_type());
         ext.put("bank_type", wxOrderQueryResp.getBank_type());
@@ -204,8 +204,8 @@ public class WxPayServiceImpl extends BasePayService {
         refundResp.setTradeNo(wxRefundResp.getOut_trade_no());
         refundResp.setRefundNo(wxRefundResp.getOut_refund_no());
         refundResp.setTotalFee(Long.parseLong(wxRefundResp.getTotal_fee()));
-        //第三方订单号
-        refundResp.setTransactionId(wxRefundResp.getTransaction_id());
+        //支付平台支付单号
+        refundResp.setOrderId(wxRefundResp.getTransaction_id());
         return refundResp;
     }
 
@@ -249,10 +249,10 @@ public class WxPayServiceImpl extends BasePayService {
         Map<String, String> ext = new HashMap<String, String>();
         ext.put("appId", this.wxAppId);
         ext.put("mchId", this.wxMchId);
-        ext.put("prepayId", wxResponse.getPrepay_id());
-        //微信支付订单
-        ext.put("transactionId", wxResponse.getTransaction_id());
         response.setExt(ext);
+        response.setOrderId(wxResponse.getTransaction_id());
+        response.setOrderNo(payRequest.getOrderNo());
+        response.setAmount(payRequest.getAmount());
         return response;
     }
 
@@ -286,6 +286,7 @@ public class WxPayServiceImpl extends BasePayService {
         ext.put("mchId", this.wxMchId);
         ext.put("prepayId", wxResponse.getPrepay_id());
         response.setExt(ext);
+        response.setAmount(payRequest.getAmount());
         return response;
     }
 
@@ -315,6 +316,7 @@ public class WxPayServiceImpl extends BasePayService {
         ext.put("prepayId", wxResponse.getPrepay_id());
         ext.put("mwebUrl", wxResponse.getMweb_url());
         response.setExt(ext);
+        response.setAmount(payRequest.getAmount());
         return response;
     }
 
@@ -347,6 +349,7 @@ public class WxPayServiceImpl extends BasePayService {
         //trade_type为NATIVE时有返回，用于生成二维码，展示给用户进行扫码支付
         ext.put("codeUrl", wxResponse.getCode_url());
         response.setExt(ext);
+        response.setAmount(payRequest.getAmount());
         return response;
     }
 

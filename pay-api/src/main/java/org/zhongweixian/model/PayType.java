@@ -5,17 +5,22 @@ public enum PayType {
     /**
      *手机网站支付
      */
-    ALI_H5("alipay.trade.wap.pay"),
+    ALI_H5("QUICK_WAP_WAY"),
 
     /**
      * 支付宝电脑网站支付
      */
-    ALI_WEB("alipay.trade.page.pay"),
+    ALI_WEB("FAST_INSTANT_TRADE_PAY"),
 
     /**
      * APP支付
      */
-    ALI_APP("alipay.trade.app.pay"),
+    ALI_APP("QUICK_MSECURITY_PAY"),
+
+    /**
+     *
+     */
+    ALI_FACE("FACE_TO_FACE_PAYMENT"),
 
     /**
      * 刷卡支付

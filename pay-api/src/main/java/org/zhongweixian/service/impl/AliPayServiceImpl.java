@@ -4,15 +4,11 @@ import com.alipay.api.AlipayApiException;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.DefaultAlipayClient;
 import com.alipay.api.domain.AlipayTradeAppPayModel;
-import com.alipay.api.request.AlipayTradeAppPayRequest;
-import com.alipay.api.request.AlipayTradePagePayRequest;
-import com.alipay.api.request.AlipayTradeQueryRequest;
-import com.alipay.api.request.AlipayTradeWapPayRequest;
-import com.alipay.api.response.AlipayTradeAppPayResponse;
-import com.alipay.api.response.AlipayTradeQueryResponse;
-import com.zhongweixian.rsa.RsaUtil;
+import com.alipay.api.internal.util.AlipaySignature;
+import com.alipay.api.request.*;
+import com.alipay.api.response.*;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zhongweixian.exception.ErrorCode;
@@ -20,7 +16,6 @@ import org.zhongweixian.exception.PayException;
 import org.zhongweixian.model.Channel;
 import org.zhongweixian.request.PayRequest;
 import org.zhongweixian.request.RefundRequest;
-import org.zhongweixian.request.alipay.AliPayRequest;
 import org.zhongweixian.response.CloseOrderResp;
 import org.zhongweixian.response.OrderQueryResp;
 import org.zhongweixian.response.PayResp;
@@ -67,13 +62,15 @@ public class AliPayServiceImpl extends BasePayService {
                 return h5Pay(payRequest);
             case ALI_WEB:
                 return webPay(payRequest);
+            case ALI_FACE:
+
             default:
                 throw new PayException(ErrorCode.PAY_TYPE_ERROR, payRequest.getPayType().getValue());
         }
     }
 
     /**
-     * 手机APP支付
+     * 手机APP支付,客户端直接拿body。
      *
      * @param payRequest
      * @return
@@ -88,7 +85,7 @@ public class AliPayServiceImpl extends BasePayService {
         model.setOutTradeNo(payRequest.getOrderNo());
         model.setTimeoutExpress("30m");
         model.setTotalAmount(bigDecimal.toString());
-        model.setProductCode("QUICK_MSECURITY_PAY");
+        model.setProductCode(payRequest.getPayType().getValue());
         request.setBizModel(model);
         request.setNotifyUrl(payRequest.getNotifyUrl());
         AlipayTradeAppPayResponse response = null;
@@ -99,9 +96,24 @@ public class AliPayServiceImpl extends BasePayService {
         } catch (AlipayApiException e) {
             e.printStackTrace();
         }
+        if (response==null || !response.isSuccess()){
+            throw new PayException(ErrorCode.PAY_RESPONSE_ERROR , payRequest.getPayType().getValue());
+        }
         logger.debug("alipay appPay response : {}", response.getBody());
         PayResp resp = new PayResp();
         resp.setMsg(response.getBody());
+        resp.setOrderId(response.getTradeNo());
+        resp.setOrderNo(response.getOutTradeNo());
+        resp.setAmount(payRequest.getAmount());
+
+        Map<String , String> ext = new HashMap<>();
+        ext.put("prepayId" , response.getSellerId());
+        ext.put("body" , response.getBody());
+        /**
+         * 可以直接给客户端请求，无需再做处理。
+         */
+        resp.setMsg(response.getBody());
+        resp.setCode("200");
         return resp;
     }
 
@@ -122,14 +134,31 @@ public class AliPayServiceImpl extends BasePayService {
                 "out_trade_no:" + payRequest.getOrderNo() + "," +
                 "total_amount:" + bigDecimal + "," +
                 "subject:" + payRequest.getBody() + "," +
-                "product_code:QUICK_WAP_WAY" +
+                "product_code:"+payRequest.getPayType().getValue() +
                 "}");
+        AlipayTradeWapPayResponse response = null;
         try {
-            String form = alipayClient.pageExecute(alipayRequest).getBody();
+            response  = alipayClient.pageExecute(alipayRequest);
         } catch (AlipayApiException e) {
             e.printStackTrace();
         }
-        return null;
+        if (response==null || !response.isSuccess()){
+            throw new PayException(ErrorCode.PAY_RESPONSE_ERROR , payRequest.getPayType().getValue());
+        }
+        PayResp resp = new PayResp();
+        resp.setMsg(response.getBody());
+        resp.setOrderId(response.getTradeNo());
+        resp.setOrderNo(response.getOutTradeNo());
+        resp.setAmount(payRequest.getAmount());
+        Map<String , String> ext = new HashMap<>();
+        ext.put("prepayId" , response.getSellerId());
+        ext.put("body" , response.getBody());
+        /**
+         * 直接将完整的表单html输出到页面
+         */
+        resp.setMsg(response.getMsg());
+        resp.setCode("200");
+        return resp;
     }
 
     /**
@@ -147,18 +176,34 @@ public class AliPayServiceImpl extends BasePayService {
         alipayRequest.setNotifyUrl(payRequest.getNotifyUrl());
         alipayRequest.setBizContent("{" +
                 "out_trade_no:" + payRequest.getOrderNo() + "," +
-                "product_code:FAST_INSTANT_TRADE_PAY," +
+                "product_code:"+payRequest.getPayType().getValue()+"," +
                 "total_amount:" + bigDecimal.toString() + "," +
                 "subject:" + payRequest.getBody() + "," +
                 "body:" + payRequest.getDetail() +
                 "}");
-        String form = "";
+        AlipayTradePagePayResponse response = null;
         try {
-            form = alipayClient.pageExecute(alipayRequest).getBody();
+            response = alipayClient.pageExecute(alipayRequest);
         } catch (AlipayApiException e) {
             e.printStackTrace();
         }
-        logger.debug("alipay webPay response : {}  ", form);
+        if (response==null || !response.isSuccess()){
+            throw new PayException(ErrorCode.PAY_RESPONSE_ERROR , payRequest.getPayType().getValue());
+        }
+        logger.debug("alipay webPay response : {}  ", response.toString());
+        PayResp resp = new PayResp();
+        resp.setMsg(response.getBody());
+        resp.setOrderId(response.getTradeNo());
+        resp.setOrderNo(response.getOutTradeNo());
+        resp.setAmount(payRequest.getAmount());
+        Map<String , String> ext = new HashMap<>();
+        ext.put("prepayId" , response.getSellerId());
+        ext.put("body" , response.getBody());
+        /**
+         * 直接将完整的表单html输出到页面
+         */
+        resp.setMsg(response.getMsg());
+        resp.setCode("200");
         return null;
     }
 
@@ -171,7 +216,7 @@ public class AliPayServiceImpl extends BasePayService {
         AlipayTradeQueryRequest request = new AlipayTradeQueryRequest();
         request.setBizContent("{" +
                 "out_trade_no:" + orderNo + "," +
-                "trade_no:" + thirdOrderNo + "" +
+                "trade_no:" + thirdOrderNo +
                 "}");
         AlipayTradeQueryResponse response = null;
         try {
@@ -186,11 +231,18 @@ public class AliPayServiceImpl extends BasePayService {
         BigDecimal bigDecimal = new BigDecimal(response.getTotalAmount());
         bigDecimal = bigDecimal.multiply(new BigDecimal(100));
         queryResp.setAmount(bigDecimal.longValue());
+        queryResp.setUts(response.getSendPayDate());
         Map<String, String> ext = new HashMap<String, String>();
         //买家支付宝账号
         ext.put("customerId", response.getBuyerLogonId());
+        //商家优惠
+        ext.put("mdiscountAmount", response.getMdiscountAmount());
+        //平台优惠
+        ext.put("discountAmount", response.getDiscountAmount());
+        //支付渠道
+        ext.put("fundBillList", String.valueOf(response.getFundBillList()));
         queryResp.setExt(ext);
-
+        queryResp.setState(response.getTradeStatus());
         return queryResp;
     }
 
@@ -201,12 +253,53 @@ public class AliPayServiceImpl extends BasePayService {
 
     @Override
     public RefundResp refund(RefundRequest refundRequest) {
-        return null;
+        //支付宝只需要退款金额
+        BigDecimal bigDecimal = new BigDecimal(refundRequest.getRefundFee());
+        bigDecimal = bigDecimal.divide(new BigDecimal(100));
+        AlipayTradeRefundRequest request = new AlipayTradeRefundRequest();
+        //回调通知地址
+        request.setNotifyUrl(refundRequest.getNotifyUrl());
+        request.setBizContent("{" +
+                "out_trade_no:" + refundRequest.getOrderNo() + "," +
+                "trade_no:" + refundRequest.getThirdOrderNo() + "," +
+                "refund_amount:" + bigDecimal.toString() + "," +
+                "refund_reason:" + refundRequest.getRefundDesc() + "," +
+                "out_request_no:" + RandomStringUtils.randomAlphabetic(32) +
+                "}");
+        AlipayTradeRefundResponse response = null;
+        try {
+            response = alipayClient.execute(request);
+        } catch (AlipayApiException e) {
+            e.printStackTrace();
+        }
+        RefundResp refundResp = new RefundResp();
+        if (!response.isSuccess()) {
+            refundResp.setErrorCode("ERROR");
+            refundResp.setCode("500");
+            return refundResp;
+        }
+        //支付宝交易单号
+        refundResp.setRefundId(response.getTradeNo());
+        //商家自己的退款单号
+        refundResp.setRefundNo(response.getOutTradeNo());
+        //退款金额
+        BigDecimal refundFee = new BigDecimal(response.getRefundFee());
+        refundFee = refundFee.multiply(new BigDecimal(100));
+        refundResp.setRefundFee(refundFee.longValue());
+        refundResp.setTotalFee(refundRequest.getTotalFee());
+        return refundResp;
     }
 
     @Override
     public boolean webhooksVerify(String body, String signature, String publickey) {
-        return false;
+        Map<String, String> params = MapUtil.objectToMap(body);
+        boolean signVerified = false;
+        try {
+            signVerified = AlipaySignature.rsaCheckV2(params, publickey, CHART_SET, SIGN_TYPE);
+        } catch (AlipayApiException e) {
+            e.printStackTrace();
+        }
+        return signVerified;
     }
 
 }

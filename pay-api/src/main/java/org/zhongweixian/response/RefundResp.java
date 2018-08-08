@@ -11,7 +11,7 @@ public class RefundResp extends BaseResp {
     /**
      * 第三方订单号
      */
-    private String transactionId;
+    private String orderId;
 
     /**
      * 第三方退款单号
@@ -52,12 +52,13 @@ public class RefundResp extends BaseResp {
         this.errorMsg = errorMsg;
     }
 
-    public String getTransactionId() {
-        return transactionId;
+
+    public String getOrderId() {
+        return orderId;
     }
 
-    public void setTransactionId(String transactionId) {
-        this.transactionId = transactionId;
+    public void setOrderId(String orderId) {
+        this.orderId = orderId;
     }
 
     public String getRefundId() {
