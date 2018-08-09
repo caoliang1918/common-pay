@@ -1,6 +1,7 @@
 package org.zhongweixian.service.impl;
 
 import com.zhongweixian.hmac.HmacUtil;
+import com.zhongweixian.md5.Md5Util;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -32,6 +33,8 @@ import org.zhongweixian.util.MapUtil;
 import org.zhongweixian.util.XMLConverUtil;
 
 import java.security.SignatureException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -223,9 +226,29 @@ public class WxPayServiceImpl extends BasePayService {
     }
 
     @Override
-    public boolean webhooksVerify(String body, String signature, String publickey) {
-
-        return false;
+    public boolean webhooksVerify(String body, String signature, String key) {
+        Map<String, String> map = XMLConverUtil.convertToMap(body);
+        String sign = map.get("sign");
+        if(StringUtils.isBlank(sign)){
+            throw new PayException(ErrorCode.SIGN_ERROR);
+        }
+        ArrayList<String> list = new ArrayList<String>();
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            if (entry.getValue() != "") {
+                list.add(entry.getKey() + "=" + entry.getValue() + "&");
+            }
+        }
+        int size = list.size();
+        String[] arrayToSort = list.toArray(new String[size]);
+        Arrays.sort(arrayToSort, String.CASE_INSENSITIVE_ORDER);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < size; i++) {
+            sb.append(arrayToSort[i]);
+        }
+        String result = sb.toString();
+        result += "key=" + key;
+        result = Md5Util.encrypt(result).toUpperCase();
+        return result.equals(sign);
     }
 
     /**
@@ -360,7 +383,7 @@ public class WxPayServiceImpl extends BasePayService {
         ext.put("mchId", this.wxMchId);
         ext.put("prepayId", wxResponse.getPrepay_id());
         //trade_type为NATIVE时有返回，用于生成二维码，展示给用户进行扫码支付
-        ext.put("codeUrl", wxResponse.getCode_url());
+        ext.put("qrCode", wxResponse.getCode_url());
         response.setExt(ext);
         response.setAmount(payRequest.getAmount());
         return response;

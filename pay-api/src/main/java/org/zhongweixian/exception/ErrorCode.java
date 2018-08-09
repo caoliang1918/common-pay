@@ -8,6 +8,7 @@ import java.text.MessageFormat;
 public enum ErrorCode {
 
     XML_PARSE_ERROR(10001 , "XML解析异常:{0}"),
+    SIGN_ERROR(10002 , "签名失败"),
     PAY_RESPONSE_NULL(20001, "{0}-{1}支付接口返回为空"),
     PAY_RESPONSE_ERROR(20002, "支付失败:{0}"),
     PAY_CHANNEL_ERROR(30001, "支付渠道错误:{0}"),
