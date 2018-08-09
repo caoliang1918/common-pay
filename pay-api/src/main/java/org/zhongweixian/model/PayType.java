@@ -18,14 +18,21 @@ public enum PayType {
     ALI_APP("QUICK_MSECURITY_PAY"),
 
     /**
-     *
+     * 当面付[商家主动扫码,支付宝用户展示二维码]
      */
     ALI_FACE("FACE_TO_FACE_PAYMENT"),
 
+
     /**
-     * 刷卡支付
+     * 商家展示二维码，用户扫码支付
+     */
+    ALI_PRE_CREATE("talipay.trade.precreate"),
+
+    /**
+     * 刷卡支付[商家主动扫码,微信用户展示二维码]
      */
     WX_MICRO("MICROPAY"),
+
     /**
      * H5支付
      */

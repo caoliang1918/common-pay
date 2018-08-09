@@ -20,6 +20,9 @@ public class WxRefundXml extends BaseReqXml {
     @XmlElement
     private String out_trade_no;
 
+    @XmlElement
+    private String transaction_id;
+
     /**
      * 商户退款单号
      */
@@ -101,5 +104,13 @@ public class WxRefundXml extends BaseReqXml {
 
     public void setNotify_url(String notify_url) {
         this.notify_url = StringUtils.isBlank(notify_url) ? null : notify_url.trim();
+    }
+
+    public String getTransaction_id() {
+        return transaction_id;
+    }
+
+    public void setTransaction_id(String transaction_id) {
+        this.transaction_id = transaction_id;
     }
 }

@@ -26,7 +26,7 @@ public class RefundRequest implements Serializable {
     /**
      * 交易平台单号[可选值]
      */
-    private String thirdOrderNo;
+    private String orderId;
 
     @NotBlank(message = "商户退款单号不能为空")
     private String refundNo;
@@ -116,11 +116,11 @@ public class RefundRequest implements Serializable {
         this.notifyUrl = notifyUrl;
     }
 
-    public String getThirdOrderNo() {
-        return thirdOrderNo;
+    public String getOrderId() {
+        return orderId;
     }
 
-    public void setThirdOrderNo(String thirdOrderNo) {
-        this.thirdOrderNo = thirdOrderNo;
+    public void setOrderId(String orderId) {
+        this.orderId = orderId;
     }
 }

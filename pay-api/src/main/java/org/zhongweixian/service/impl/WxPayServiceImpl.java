@@ -63,7 +63,10 @@ public class WxPayServiceImpl extends BasePayService {
     @Override
     public PayResp pay(PayRequest payRequest) {
         if (!payRequest.getChannel().equals(Channel.WX_PAY)) {
-            return null;
+            throw new PayException(ErrorCode.PAY_CHANNEL_ERROR, payRequest.getChannel().name());
+        }
+        if (payRequest.getAmount() == null || payRequest.getAmount() < 1L) {
+            throw new PayException(ErrorCode.PAY_AMOUNT_ERROR);
         }
         switch (payRequest.getPayType()) {
             case WX_MICRO:
@@ -108,7 +111,7 @@ public class WxPayServiceImpl extends BasePayService {
         WxOrderQueryResp wxOrderQueryResp = XMLConverUtil.convertToObject(WxOrderQueryResp.class, result);
         if (!SUCCESS.equals(wxOrderQueryResp.getReturn_code()) || !SUCCESS.equals(wxOrderQueryResp.getResult_code())) {
             logger.error("orderQuery error :{}", wxOrderQueryResp);
-            throw new PayException(ErrorCode.ORDER_QUERY_ERRPR, wxOrderQueryResp.toString());
+            throw new PayException(ErrorCode.ORDER_QUERY_ERRPR);
         }
         logger.info("queryOrder success ,orderNo:{} , transaction_id:{} , trade_type:{}", wxOrderQueryResp.getOut_trade_no(), wxOrderQueryResp.getTransaction_id(), wxOrderQueryResp.getTrade_type());
         //转换公共对象
@@ -147,7 +150,7 @@ public class WxPayServiceImpl extends BasePayService {
         header.put(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_XML_VALUE);
         String result = new HttpClient().postExchange(WX_ORDER_QUERY_URL, MediaType.TEXT_XML, xmlRequest);
         if (StringUtils.isBlank(result)) {
-            throw new PayException(ErrorCode.PAY_RESPONSE_NULL);
+            throw new PayException(ErrorCode.ORDER_CLOSE_ERROR);
         }
         /**
          * 解析XML
@@ -156,7 +159,7 @@ public class WxPayServiceImpl extends BasePayService {
         CloseOrderResp closeOrderResp = new CloseOrderResp();
         closeOrderResp.setOrderNo(orderNo);
         if (!SUCCESS.equals(wxCloseOrderResp.getReturn_code())) {
-            logger.error("orderQuery error :{}", wxCloseOrderResp);
+            logger.error("order close error :{}", wxCloseOrderResp);
             closeOrderResp.setCode("500");
             closeOrderResp.setErrorCode(wxCloseOrderResp.getErr_code());
             closeOrderResp.setErrorDes(wxCloseOrderResp.getErr_code_des());
@@ -171,13 +174,17 @@ public class WxPayServiceImpl extends BasePayService {
         WxRefundXml wxRefundXml = new WxRefundXml();
         wxRefundXml.setAppid(wxAppId);
         wxRefundXml.setMch_id(wxMchId);
+        //商户支付订单号
         wxRefundXml.setOut_trade_no(refundRequest.getOrderNo());
+        //商户退款单号
         wxRefundXml.setOut_refund_no(refundRequest.getRefundNo());
         wxRefundXml.setNotify_url(refundRequest.getNotifyUrl());
         wxRefundXml.setRefund_desc(refundRequest.getRefundDesc());
         wxRefundXml.setRefund_fee_type(refundRequest.getFeeType());
         wxRefundXml.setRefund_fee(refundRequest.getRefundFee());
         wxRefundXml.setTotal_fee(refundRequest.getTotalFee());
+        //微信支付单号
+        wxRefundXml.setTransaction_id(refundRequest.getOrderId());
         /**
          * 构建XML
          */
@@ -194,23 +201,30 @@ public class WxPayServiceImpl extends BasePayService {
         WxRefundResp wxRefundResp = XMLConverUtil.convertToObject(WxRefundResp.class, result);
         RefundResp refundResp = new RefundResp();
         if (!SUCCESS.equals(wxRefundResp.getReturn_code())) {
+            logger.error("refund order error :{}" , result);
             refundResp.setCode("500");
             refundResp.setErrorCode(wxRefundResp.getErr_code());
             refundResp.setMsg(wxRefundResp.getErr_code_des());
             return refundResp;
         }
+        //微信退款单号
         refundResp.setRefundId(wxRefundResp.getRefund_id());
-        refundResp.setRefundFee(Long.parseLong(wxRefundResp.getRefund_fee()));
-        refundResp.setTradeNo(wxRefundResp.getOut_trade_no());
-        refundResp.setRefundNo(wxRefundResp.getOut_refund_no());
-        refundResp.setTotalFee(Long.parseLong(wxRefundResp.getTotal_fee()));
-        //支付平台支付单号
+        //微信支付单号
         refundResp.setOrderId(wxRefundResp.getTransaction_id());
+        //退款金额
+        refundResp.setRefundFee(Long.parseLong(wxRefundResp.getRefund_fee()));
+        //商户支付单号
+        refundResp.setTradeNo(wxRefundResp.getOut_trade_no());
+        //商户退款单号
+        refundResp.setRefundNo(wxRefundResp.getOut_refund_no());
+        //订单总金额
+        refundResp.setTotalFee(Long.parseLong(wxRefundResp.getTotal_fee()));
         return refundResp;
     }
 
     @Override
     public boolean webhooksVerify(String body, String signature, String publickey) {
+
         return false;
     }
 
@@ -227,11 +241,8 @@ public class WxPayServiceImpl extends BasePayService {
      */
     private PayResp microPay(PayRequest payRequest) {
         //二维码中的授权码
-        Object authCode = payRequest.getExt().get("authCode");
-        if (authCode == null) {
-            throw new PayException(ErrorCode.PAY_WX_AUTH_CODE_NOT_NULL);
-        }
-        if (String.valueOf(authCode).length() != 18) {
+        String authCode = payRequest.getExt().get("authCode");
+        if (StringUtils.isBlank(authCode) || authCode.length() != 18) {
             throw new PayException(ErrorCode.PAY_WX_AUTH_CODE_ERROR);
         }
         PayResp response = new PayResp();
@@ -335,6 +346,8 @@ public class WxPayServiceImpl extends BasePayService {
         WxPayRequestXml wxPayRequestXml = new WxPayRequestXml();
         //通用请求对象转换xml对象
         pay2Wx(payRequest, wxPayRequestXml);
+        //设置支付方式
+        wxPayRequestXml.setTrade_type(PayType.WX_QRCODE.getValue());
         //签名运算
         sign(wxPayRequestXml);
         wxPayRequestXml.setRequestUrl(WX_PAY_URL);
@@ -382,7 +395,7 @@ public class WxPayServiceImpl extends BasePayService {
      * @param obj
      * @return
      */
-    String sign(Object obj) {
+    private String sign(Object obj) {
         Map<String, String> map = MapUtil.objectToMap(obj);
         map = MapUtil.order(map);
         try {
@@ -420,8 +433,26 @@ public class WxPayServiceImpl extends BasePayService {
     }
 
     private PayResp jsPay(PayRequest payRequest) {
-
-        return null;
+        PayResp response = new PayResp();
+        WxPayRequestXml wxPayRequestXml = new WxPayRequestXml();
+        //通用请求对象转换xml对象
+        pay2Wx(payRequest, wxPayRequestXml);
+        //设置支付方式
+        wxPayRequestXml.setTrade_type(PayType.WX_JS.getValue());
+        //签名运算
+        sign(wxPayRequestXml);
+        wxPayRequestXml.setRequestUrl(WX_PAY_URL);
+        /**
+         * 预支付成功，构建APP支付需要的对象
+         */
+        WxPayResp wxResponse = createCharge(wxPayRequestXml);
+        Map<String, String> ext = new HashMap<String, String>();
+        ext.put("appId", this.wxAppId);
+        ext.put("mchId", this.wxMchId);
+        ext.put("prepayId", wxResponse.getPrepay_id());
+        ext.put("tradeType", wxResponse.getTrade_type());
+        response.setExt(ext);
+        response.setAmount(payRequest.getAmount());
+        return response;
     }
-
 }
