@@ -75,7 +75,7 @@ public class AliPayServiceImpl extends BasePayService {
     }
 
     /**
-     * 统一收单线下交易预创建
+     * 统一收单线下交易预创建，商家生成二维码，用户扫码支付
      *
      * @param payRequest
      * @param amount
@@ -121,19 +121,19 @@ public class AliPayServiceImpl extends BasePayService {
             e.printStackTrace();
         }
         if (response == null || !response.isSuccess()) {
-            logger.error("pay order:{} error" , payRequest.getOrderNo());
+            logger.error("pay order:{} error", payRequest.getOrderNo());
             throw new PayException(ErrorCode.PAY_RESPONSE_ERROR, payRequest.getPayType().name());
         }
         payResp.setAmount(payRequest.getAmount());
         payResp.setOrderNo(payRequest.getOrderNo());
         params.clear();
-        params.put("qrCode" , response.getQrCode());
+        params.put("qrCode", response.getQrCode());
         payResp.setExt(params);
         return payResp;
     }
 
     /**
-     * 支付宝当面付
+     * 支付宝当面付，用户展示二维码，商家扫码提交到支付宝系统，用户收到支付请求确认支付
      *
      * @param payRequest
      * @param amount

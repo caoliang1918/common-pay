@@ -6,11 +6,9 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.zhongweixian.exception.ErrorCode;
 import org.zhongweixian.exception.PayException;
-import org.zhongweixian.http.HttpClient;
+import org.zhongweixian.http.HttpClientBuild;
 import org.zhongweixian.model.Channel;
 import org.zhongweixian.model.PayType;
 import org.zhongweixian.request.PayRequest;
@@ -107,7 +105,7 @@ public class WxPayServiceImpl extends BasePayService {
         String xmlRequest = XMLConverUtil.convertToXML(orderQueryXml);
         Map<String, String> header = new HashMap<String, String>();
         header.put(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_XML_VALUE);
-        String result = new HttpClient().postExchange(WX_ORDER_QUERY_URL, MediaType.TEXT_XML, xmlRequest);
+        String result = new HttpClientBuild().postExchange(WX_ORDER_QUERY_URL, MediaType.TEXT_XML, xmlRequest);
         if (StringUtils.isBlank(result)) {
             throw new PayException(ErrorCode.PAY_RESPONSE_NULL);
         }
@@ -151,7 +149,7 @@ public class WxPayServiceImpl extends BasePayService {
         String xmlRequest = XMLConverUtil.convertToXML(wxCloseOrderXml);
         Map<String, String> header = new HashMap<String, String>();
         header.put(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_XML_VALUE);
-        String result = new HttpClient().postExchange(WX_ORDER_QUERY_URL, MediaType.TEXT_XML, xmlRequest);
+        String result = new HttpClientBuild().postExchange(WX_ORDER_QUERY_URL, MediaType.TEXT_XML, xmlRequest);
         if (StringUtils.isBlank(result)) {
             throw new PayException(ErrorCode.ORDER_CLOSE_ERROR);
         }
@@ -194,7 +192,7 @@ public class WxPayServiceImpl extends BasePayService {
         String xmlRequest = XMLConverUtil.convertToXML(wxRefundXml);
         Map<String, String> header = new HashMap<String, String>();
         header.put(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_XML_VALUE);
-        String result = new HttpClient().postExchange(WX_REFUND_URL, MediaType.TEXT_XML, xmlRequest);
+        String result = new HttpClientBuild().postExchange(WX_REFUND_URL, MediaType.TEXT_XML, xmlRequest);
         if (StringUtils.isBlank(result)) {
             throw new PayException(ErrorCode.ORDER_REFUND_ERROR);
         }
@@ -442,7 +440,7 @@ public class WxPayServiceImpl extends BasePayService {
         String xmlRequest = XMLConverUtil.convertToXML(wxPayRequestXml);
         Map<String, String> header = new HashMap<String, String>();
         header.put(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_XML_VALUE);
-        String result = new HttpClient().postExchange(wxPayRequestXml.getRequestUrl(), MediaType.TEXT_XML, xmlRequest);
+        String result = new HttpClientBuild().postExchange(wxPayRequestXml.getRequestUrl(), MediaType.TEXT_XML, xmlRequest);
         if (StringUtils.isBlank(result)) {
             throw new PayException(ErrorCode.PAY_RESPONSE_NULL);
         }
