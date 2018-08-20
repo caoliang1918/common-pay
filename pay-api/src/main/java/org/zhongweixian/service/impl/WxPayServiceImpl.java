@@ -4,6 +4,7 @@ import com.zhongweixian.hmac.HmacUtil;
 import com.zhongweixian.md5.Md5Util;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zhongweixian.exception.ErrorCode;
@@ -50,8 +51,8 @@ public class WxPayServiceImpl extends BasePayService {
     private final static String SIGN_TYPE = "HMAC-SHA256";
 
 
-    public WxPayServiceImpl(String wxAppId, String wxMchId, String wxPaySecret, String aliPayMerchantId, String aliPaySecret, String privateKey) {
-        super(wxAppId, wxMchId, wxPaySecret, aliPayMerchantId, aliPaySecret, privateKey);
+    public WxPayServiceImpl(String wxAppId, String wxMchId, String wxPaySecret, String aliPayMerchantId, String aliPaySecret, String privateKey, byte[] cert) {
+        super(wxAppId, wxMchId, wxPaySecret, aliPayMerchantId, aliPaySecret, privateKey, cert);
     }
 
 
@@ -103,9 +104,7 @@ public class WxPayServiceImpl extends BasePayService {
          * 解析XML
          */
         String xmlRequest = XMLConverUtil.convertToXML(orderQueryXml);
-        Map<String, String> header = new HashMap<String, String>();
-        header.put(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_XML_VALUE);
-        String result = new HttpClientBuild().postExchange(WX_ORDER_QUERY_URL, MediaType.TEXT_XML, xmlRequest);
+        String result = new HttpClientBuild().postExchange(WX_ORDER_QUERY_URL, "text/xml", xmlRequest);
         if (StringUtils.isBlank(result)) {
             throw new PayException(ErrorCode.PAY_RESPONSE_NULL);
         }
@@ -148,8 +147,7 @@ public class WxPayServiceImpl extends BasePayService {
          */
         String xmlRequest = XMLConverUtil.convertToXML(wxCloseOrderXml);
         Map<String, String> header = new HashMap<String, String>();
-        header.put(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_XML_VALUE);
-        String result = new HttpClientBuild().postExchange(WX_ORDER_QUERY_URL, MediaType.TEXT_XML, xmlRequest);
+        String result = new HttpClientBuild().postExchange(WX_ORDER_QUERY_URL, "text/xml", xmlRequest);
         if (StringUtils.isBlank(result)) {
             throw new PayException(ErrorCode.ORDER_CLOSE_ERROR);
         }
@@ -170,6 +168,12 @@ public class WxPayServiceImpl extends BasePayService {
         return closeOrderResp;
     }
 
+    /**
+     * 退款，TLS双向认证
+     *
+     * @param refundRequest
+     * @return
+     */
     @Override
     public RefundResp refund(RefundRequest refundRequest) {
         WxRefundXml wxRefundXml = new WxRefundXml();
@@ -190,9 +194,7 @@ public class WxPayServiceImpl extends BasePayService {
          * 构建XML
          */
         String xmlRequest = XMLConverUtil.convertToXML(wxRefundXml);
-        Map<String, String> header = new HashMap<String, String>();
-        header.put(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_XML_VALUE);
-        String result = new HttpClientBuild().postExchange(WX_REFUND_URL, MediaType.TEXT_XML, xmlRequest);
+        String result = new HttpClientBuild(wxPaySecret, cert).postExchange(WX_REFUND_URL, "text/xml", xmlRequest);
         if (StringUtils.isBlank(result)) {
             throw new PayException(ErrorCode.ORDER_REFUND_ERROR);
         }
@@ -202,7 +204,7 @@ public class WxPayServiceImpl extends BasePayService {
         WxRefundResp wxRefundResp = XMLConverUtil.convertToObject(WxRefundResp.class, result);
         RefundResp refundResp = new RefundResp();
         if (!SUCCESS.equals(wxRefundResp.getReturn_code())) {
-            logger.error("refund order error :{}" , result);
+            logger.error("refund order error :{}", result);
             refundResp.setCode("500");
             refundResp.setErrorCode(wxRefundResp.getErr_code());
             refundResp.setMsg(wxRefundResp.getErr_code_des());
@@ -227,7 +229,7 @@ public class WxPayServiceImpl extends BasePayService {
     public boolean webhooksVerify(String body, String signature, String key) {
         Map<String, String> map = XMLConverUtil.convertToMap(body);
         String sign = map.get("sign");
-        if(StringUtils.isBlank(sign)){
+        if (StringUtils.isBlank(sign)) {
             throw new PayException(ErrorCode.SIGN_ERROR);
         }
         ArrayList<String> list = new ArrayList<String>();
@@ -438,9 +440,7 @@ public class WxPayServiceImpl extends BasePayService {
      */
     private WxPayResp createCharge(WxPayRequestXml wxPayRequestXml) {
         String xmlRequest = XMLConverUtil.convertToXML(wxPayRequestXml);
-        Map<String, String> header = new HashMap<String, String>();
-        header.put(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_XML_VALUE);
-        String result = new HttpClientBuild().postExchange(wxPayRequestXml.getRequestUrl(), MediaType.TEXT_XML, xmlRequest);
+        String result = new HttpClientBuild().postExchange(wxPayRequestXml.getRequestUrl(), "text/xml", xmlRequest);
         if (StringUtils.isBlank(result)) {
             throw new PayException(ErrorCode.PAY_RESPONSE_NULL);
         }

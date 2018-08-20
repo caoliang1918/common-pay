@@ -42,8 +42,8 @@ public class AliPayServiceImpl extends BasePayService {
     private AlipayClient alipayClient = null;
 
 
-    public AliPayServiceImpl(String wxAppId, String wxMchId, String wxPaySecret, String aliPayMerchantId, String aliPaySecret, String privateKey) {
-        super(wxAppId, wxMchId, wxPaySecret, aliPayMerchantId, aliPaySecret, privateKey);
+    public AliPayServiceImpl(String wxAppId, String wxMchId, String wxPaySecret, String aliPayMerchantId, String aliPaySecret, String privateKey, byte[] cert) {
+        super(wxAppId, wxMchId, wxPaySecret, aliPayMerchantId, aliPaySecret, privateKey, cert);
         alipayClient = new DefaultAlipayClient(ALI_PAY_URL, aliPayMerchantId, privateKey, FORMAT, CHART_SET, aliPaySecret, SIGN_TYPE);
     }
 
@@ -85,9 +85,8 @@ public class AliPayServiceImpl extends BasePayService {
         PayResp payResp = new PayResp();
         AlipayTradePrecreateRequest request = new AlipayTradePrecreateRequest();
         Map<String, String> params = new HashMap<>();
-        params.put("out_trade_no", "");
-        params.put("total_amount", "");
-        params.put("subject", "");
+        params.put("out_trade_no", payRequest.getOrderNo());
+        params.put("subject", payRequest.getBody());
         params.put("total_amount", amount);
         /**
          * 操作员
