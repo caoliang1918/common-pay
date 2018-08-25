@@ -4,7 +4,6 @@ import com.zhongweixian.hmac.HmacUtil;
 import com.zhongweixian.md5.Md5Util;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zhongweixian.exception.ErrorCode;
@@ -12,8 +11,7 @@ import org.zhongweixian.exception.PayException;
 import org.zhongweixian.http.HttpClientBuild;
 import org.zhongweixian.model.Channel;
 import org.zhongweixian.model.PayType;
-import org.zhongweixian.request.PayRequest;
-import org.zhongweixian.request.RefundRequest;
+import org.zhongweixian.request.*;
 import org.zhongweixian.request.wxpay.WxCloseOrderXml;
 import org.zhongweixian.request.wxpay.WxOrderQueryXml;
 import org.zhongweixian.request.wxpay.WxPayRequestXml;
@@ -26,7 +24,7 @@ import org.zhongweixian.response.wxpay.WxCloseOrderResp;
 import org.zhongweixian.response.wxpay.WxOrderQueryResp;
 import org.zhongweixian.response.wxpay.WxPayResp;
 import org.zhongweixian.response.wxpay.WxRefundResp;
-import org.zhongweixian.service.BasePayService;
+import org.zhongweixian.service.CommonPay;
 import org.zhongweixian.util.DateUtil;
 import org.zhongweixian.util.MapUtil;
 import org.zhongweixian.util.XMLConverUtil;
@@ -40,7 +38,7 @@ import java.util.Map;
 /**
  * Created by caoliang on  6/5/2018
  */
-public class WxPayServiceImpl extends BasePayService {
+public class WxPayServiceImpl implements CommonPay {
     private Logger logger = LoggerFactory.getLogger(WxPayServiceImpl.class);
 
     private final static String WX_PAY_URL = "https://api.mch.weixin.qq.com/pay/unifiedorder";
@@ -49,10 +47,10 @@ public class WxPayServiceImpl extends BasePayService {
     private final static String WX_REFUND_URL = "https://api.mch.weixin.qq.com/secapi/pay/refund";
     private final static String SUCCESS = "SUCCESS";
     private final static String SIGN_TYPE = "HMAC-SHA256";
+    private Config config;
 
-
-    public WxPayServiceImpl(String wxAppId, String wxMchId, String wxPaySecret, String aliPayMerchantId, String aliPaySecret, String privateKey, byte[] cert) {
-        super(wxAppId, wxMchId, wxPaySecret, aliPayMerchantId, aliPaySecret, privateKey, cert);
+    public WxPayServiceImpl(Config config) {
+        this.config = config;
     }
 
 
@@ -87,15 +85,15 @@ public class WxPayServiceImpl extends BasePayService {
     }
 
     @Override
-    public OrderQueryResp queryOrder(String orderNo, String thirdOrderNo) {
-        if (StringUtils.isBlank(orderNo) || StringUtils.isBlank(thirdOrderNo)) {
+    public OrderQueryResp queryOrder(OrderRequest orderRequest) {
+        if (StringUtils.isBlank(orderRequest.getOrderNo()) || StringUtils.isBlank(orderRequest.getOrderId())) {
             throw new PayException(ErrorCode.PAY_ORDER_NO_NULL);
         }
         WxOrderQueryXml orderQueryXml = new WxOrderQueryXml();
-        orderQueryXml.setAppid(wxAppId);
-        orderQueryXml.setMch_id(wxMchId);
-        orderQueryXml.setTransaction_id(thirdOrderNo);
-        orderQueryXml.setOut_trade_no(orderNo);
+        orderQueryXml.setAppid(config.wxAppId);
+        orderQueryXml.setMch_id(config.wxMchId);
+        orderQueryXml.setTransaction_id(orderRequest.getOrderId());
+        orderQueryXml.setOut_trade_no(orderRequest.getOrderNo());
         String random = RandomStringUtils.randomAlphabetic(32);
         orderQueryXml.setNonce_str(random);
         orderQueryXml.setSign_type(SIGN_TYPE);
@@ -134,12 +132,12 @@ public class WxPayServiceImpl extends BasePayService {
     }
 
     @Override
-    public CloseOrderResp closeOrder(String orderNo) {
+    public CloseOrderResp closeOrder(OrderRequest orderRequest) {
         WxCloseOrderXml wxCloseOrderXml = new WxCloseOrderXml();
-        wxCloseOrderXml.setAppid(wxAppId);
-        wxCloseOrderXml.setMch_id(wxMchId);
+        wxCloseOrderXml.setAppid(config.wxAppId);
+        wxCloseOrderXml.setMch_id(config.wxMchId);
         wxCloseOrderXml.setNonce_str(RandomStringUtils.randomAlphabetic(32));
-        wxCloseOrderXml.setOut_trade_no(orderNo);
+        wxCloseOrderXml.setOut_trade_no(orderRequest.getOrderNo());
         wxCloseOrderXml.setSign_type(SIGN_TYPE);
         wxCloseOrderXml.setSign(sign(wxCloseOrderXml));
         /**
@@ -156,7 +154,7 @@ public class WxPayServiceImpl extends BasePayService {
          */
         WxCloseOrderResp wxCloseOrderResp = XMLConverUtil.convertToObject(WxCloseOrderResp.class, result);
         CloseOrderResp closeOrderResp = new CloseOrderResp();
-        closeOrderResp.setOrderNo(orderNo);
+        closeOrderResp.setOrderNo(orderRequest.getOrderNo());
         if (!SUCCESS.equals(wxCloseOrderResp.getReturn_code())) {
             logger.error("order close error :{}", wxCloseOrderResp);
             closeOrderResp.setCode("500");
@@ -177,8 +175,8 @@ public class WxPayServiceImpl extends BasePayService {
     @Override
     public RefundResp refund(RefundRequest refundRequest) {
         WxRefundXml wxRefundXml = new WxRefundXml();
-        wxRefundXml.setAppid(wxAppId);
-        wxRefundXml.setMch_id(wxMchId);
+        wxRefundXml.setAppid(config.wxAppId);
+        wxRefundXml.setMch_id(config.wxMchId);
         //商户支付订单号
         wxRefundXml.setOut_trade_no(refundRequest.getOrderNo());
         //商户退款单号
@@ -194,7 +192,7 @@ public class WxPayServiceImpl extends BasePayService {
          * 构建XML
          */
         String xmlRequest = XMLConverUtil.convertToXML(wxRefundXml);
-        String result = new HttpClientBuild(wxPaySecret, cert).postExchange(WX_REFUND_URL, "text/xml", xmlRequest);
+        String result = new HttpClientBuild(config.getWxKey(), config.getCertPath()).postExchange(WX_REFUND_URL, "text/xml", xmlRequest);
         if (StringUtils.isBlank(result)) {
             throw new PayException(ErrorCode.ORDER_REFUND_ERROR);
         }
@@ -226,9 +224,9 @@ public class WxPayServiceImpl extends BasePayService {
     }
 
     @Override
-    public boolean webhooksVerify(String body, String signature, String key) {
-        Map<String, String> map = XMLConverUtil.convertToMap(body);
-        String sign = map.get("sign");
+    public boolean webhooksVerify(VerifyRequest verifyRequest) {
+        Map<String, String> map = XMLConverUtil.convertToMap(verifyRequest.getBody());
+        String sign = verifyRequest.getSignature();
         if (StringUtils.isBlank(sign)) {
             throw new PayException(ErrorCode.SIGN_ERROR);
         }
@@ -246,7 +244,7 @@ public class WxPayServiceImpl extends BasePayService {
             sb.append(arrayToSort[i]);
         }
         String result = sb.toString();
-        result += "key=" + key;
+        result += "key=" + verifyRequest.getKey();
         result = Md5Util.encrypt(result).toUpperCase();
         return result.equals(sign);
     }
@@ -281,8 +279,8 @@ public class WxPayServiceImpl extends BasePayService {
          */
         WxPayResp wxResponse = createCharge(wxPayRequestXml);
         Map<String, String> ext = new HashMap<String, String>();
-        ext.put("appId", this.wxAppId);
-        ext.put("mchId", this.wxMchId);
+        ext.put("appId", config.wxAppId);
+        ext.put("mchId", config.wxMchId);
         response.setExt(ext);
         response.setOrderId(wxResponse.getTransaction_id());
         response.setOrderNo(payRequest.getOrderNo());
@@ -316,8 +314,8 @@ public class WxPayServiceImpl extends BasePayService {
          */
         WxPayResp wxResponse = createCharge(wxPayRequestXml);
         Map<String, String> ext = new HashMap<String, String>();
-        ext.put("appId", this.wxAppId);
-        ext.put("mchId", this.wxMchId);
+        ext.put("appId", config.wxAppId);
+        ext.put("mchId", config.wxMchId);
         ext.put("prepayId", wxResponse.getPrepay_id());
         response.setExt(ext);
         response.setAmount(payRequest.getAmount());
@@ -345,8 +343,8 @@ public class WxPayServiceImpl extends BasePayService {
          */
         WxPayResp wxResponse = createCharge(wxPayRequestXml);
         Map<String, String> ext = new HashMap<String, String>();
-        ext.put("appId", this.wxAppId);
-        ext.put("mchId", this.wxMchId);
+        ext.put("appId", config.wxAppId);
+        ext.put("mchId", config.wxMchId);
         ext.put("prepayId", wxResponse.getPrepay_id());
         ext.put("mwebUrl", wxResponse.getMweb_url());
         response.setExt(ext);
@@ -379,8 +377,8 @@ public class WxPayServiceImpl extends BasePayService {
          */
         WxPayResp wxResponse = createCharge(wxPayRequestXml);
         Map<String, String> ext = new HashMap<String, String>();
-        ext.put("appId", this.wxAppId);
-        ext.put("mchId", this.wxMchId);
+        ext.put("appId", config.wxAppId);
+        ext.put("mchId", config.wxMchId);
         ext.put("prepayId", wxResponse.getPrepay_id());
         //trade_type为NATIVE时有返回，用于生成二维码，展示给用户进行扫码支付
         ext.put("qrCode", wxResponse.getCode_url());
@@ -397,8 +395,8 @@ public class WxPayServiceImpl extends BasePayService {
      * @param wxPayRequestXml
      */
     private void pay2Wx(PayRequest payRequest, WxPayRequestXml wxPayRequestXml) {
-        wxPayRequestXml.setAppid(this.wxAppId);
-        wxPayRequestXml.setMch_id(this.wxMchId);
+        wxPayRequestXml.setAppid(config.wxAppId);
+        wxPayRequestXml.setMch_id(config.wxMchId);
         String random = RandomStringUtils.randomAlphabetic(32);
         wxPayRequestXml.setNonce_str(random);
         wxPayRequestXml.setSign_type(SIGN_TYPE);
@@ -423,8 +421,8 @@ public class WxPayServiceImpl extends BasePayService {
         map = MapUtil.order(map);
         try {
             //最后拼接上key得到stringSignTemp字符串，并对stringSignTemp进行hash运算
-            map.put("key", privateKey);
-            String sign = HmacUtil.hmacSha256Hex(MapUtil.mapJoin(map, false, false), this.privateKey);
+            map.put("key", config.getWxKey());
+            String sign = HmacUtil.hmacSha256Hex(MapUtil.mapJoin(map, false, false), config.getWxKey());
             return sign;
         } catch (SignatureException e) {
             e.printStackTrace();
@@ -468,8 +466,8 @@ public class WxPayServiceImpl extends BasePayService {
          */
         WxPayResp wxResponse = createCharge(wxPayRequestXml);
         Map<String, String> ext = new HashMap<String, String>();
-        ext.put("appId", this.wxAppId);
-        ext.put("mchId", this.wxMchId);
+        ext.put("appId", config.wxAppId);
+        ext.put("mchId", config.wxMchId);
         ext.put("prepayId", wxResponse.getPrepay_id());
         ext.put("tradeType", wxResponse.getTrade_type());
         response.setExt(ext);

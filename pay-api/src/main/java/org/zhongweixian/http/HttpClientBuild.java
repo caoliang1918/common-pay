@@ -18,10 +18,7 @@ import sun.net.www.protocol.https.DefaultHostnameVerifier;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -40,13 +37,13 @@ public class HttpClientBuild {
 
     private char[] password;
 
-    private byte[] cert;
+    private String certPath;
 
     private HttpClient httpClient;
 
-    public HttpClientBuild(String key, byte[] cert) {
+    public HttpClientBuild(String key, String certPath) {
         char[] password = key.toCharArray();
-        this.cert = cert;
+        this.certPath = certPath;
         this.password = password;
         bulid(true);
     }
@@ -58,9 +55,14 @@ public class HttpClientBuild {
 
     public void bulid(boolean userCert) {
         if (userCert) {
-            InputStream inputStream = new ByteArrayInputStream(cert);
+
             KeyStore keyStore = null;
             try {
+                File file = new File(certPath);
+                if (!file.exists()){
+                    throw new FileNotFoundException("证书文件未找到");
+                }
+                InputStream inputStream = new FileInputStream(file);
                 keyStore = KeyStore.getInstance("PKCS12");
                 keyStore.load(inputStream, password);
 

@@ -14,13 +14,12 @@ import org.slf4j.LoggerFactory;
 import org.zhongweixian.exception.ErrorCode;
 import org.zhongweixian.exception.PayException;
 import org.zhongweixian.model.Channel;
-import org.zhongweixian.request.PayRequest;
-import org.zhongweixian.request.RefundRequest;
+import org.zhongweixian.request.*;
 import org.zhongweixian.response.CloseOrderResp;
 import org.zhongweixian.response.OrderQueryResp;
 import org.zhongweixian.response.PayResp;
 import org.zhongweixian.response.RefundResp;
-import org.zhongweixian.service.BasePayService;
+import org.zhongweixian.service.CommonPay;
 import org.zhongweixian.util.MapUtil;
 
 import java.math.BigDecimal;
@@ -32,19 +31,16 @@ import java.util.Map;
  * <p>
  * 因为支付宝没有标准的rest接口,所以就直接用sdk了
  */
-public class AliPayServiceImpl extends BasePayService {
+public class AliPayServiceImpl implements CommonPay {
     private Logger logger = LoggerFactory.getLogger(AliPayServiceImpl.class);
     private final static String ALI_PAY_URL = "https://openapi.alipay.com/gateway.do";
     private final static String CHART_SET = "UTF-8";
     private final static String FORMAT = "JSON";
     private final static String SIGN_TYPE = "RSA2";
-    private final static String VERSION = "1.0";
     private AlipayClient alipayClient = null;
 
-
-    public AliPayServiceImpl(String wxAppId, String wxMchId, String wxPaySecret, String aliPayMerchantId, String aliPaySecret, String privateKey, byte[] cert) {
-        super(wxAppId, wxMchId, wxPaySecret, aliPayMerchantId, aliPaySecret, privateKey, cert);
-        alipayClient = new DefaultAlipayClient(ALI_PAY_URL, aliPayMerchantId, privateKey, FORMAT, CHART_SET, aliPaySecret, SIGN_TYPE);
+    public AliPayServiceImpl(Config config) {
+        this.alipayClient = new DefaultAlipayClient(ALI_PAY_URL, config.aliAppId, config.privateKey, FORMAT, CHART_SET, config.aliPublicKey, SIGN_TYPE);
     }
 
 
@@ -319,14 +315,14 @@ public class AliPayServiceImpl extends BasePayService {
 
 
     @Override
-    public OrderQueryResp queryOrder(String orderNo, String thirdOrderNo) {
-        if (StringUtils.isBlank(orderNo) || StringUtils.isBlank(thirdOrderNo)) {
+    public OrderQueryResp queryOrder(OrderRequest orderRequest) {
+        if (StringUtils.isBlank(orderRequest.getOrderId()) || StringUtils.isBlank(orderRequest.getOrderNo())) {
             throw new PayException(ErrorCode.PAY_ORDER_NO_NULL);
         }
         AlipayTradeQueryRequest request = new AlipayTradeQueryRequest();
         Map<String, Object> params = new HashMap<>();
-        params.put("out_trade_no", orderNo);
-        params.put("trade_no", thirdOrderNo);
+        params.put("out_trade_no", orderRequest.getOrderNo());
+        params.put("trade_no", orderRequest.getOrderNo());
         request.setBizContent(JSON.toJSONString(params));
         AlipayTradeQueryResponse response = null;
         try {
@@ -366,15 +362,15 @@ public class AliPayServiceImpl extends BasePayService {
      * 支付交易返回失败或支付系统超时，调用该接口撤销交易。如果此订单用户支付失败，支付宝系统会将此订单关闭；如果用户支付成功，支付宝系统会将此订单资金退还给用户。
      * 注意：只有发生支付系统超时或者支付结果未知时可调用撤销，其他正常支付的单如需实现相同功能请调用申请退款API。提交支付交易后调用【查询订单API】，没有明确的支付结果再调用【撤销订单API】
      *
-     * @param orderNo
+     * @param orderRequest
      * @return
      */
     @Override
-    public CloseOrderResp closeOrder(String orderNo) {
+    public CloseOrderResp closeOrder(OrderRequest orderRequest) {
         CloseOrderResp closeOrderResp = new CloseOrderResp();
         AlipayTradeCancelRequest request = new AlipayTradeCancelRequest();
         Map<String, String> params = new HashMap<>();
-        params.put("out_trade_no", orderNo);
+        params.put("out_trade_no", orderRequest.getOrderNo());
         request.setBizContent(JSON.toJSONString(params));
         AlipayTradeCancelResponse response = null;
         try {
@@ -438,11 +434,13 @@ public class AliPayServiceImpl extends BasePayService {
     }
 
     @Override
-    public boolean webhooksVerify(String body, String signature, String publickey) {
-        Map<String, String> params = MapUtil.objectToMap(body);
+    public boolean webhooksVerify(VerifyRequest verifyRequest) {
+        Map<String, String> params = MapUtil.objectToMap(verifyRequest.getBody());
+        params.put("sign" ,verifyRequest.getSignature());
+
         boolean signVerified = false;
         try {
-            signVerified = AlipaySignature.rsaCheckV2(params, publickey, CHART_SET, SIGN_TYPE);
+            signVerified = AlipaySignature.rsaCheckV2(params, verifyRequest.getKey(), CHART_SET, SIGN_TYPE);
         } catch (AlipayApiException e) {
             e.printStackTrace();
         }

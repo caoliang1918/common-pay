@@ -10,13 +10,7 @@ import java.io.Serializable;
  * @author : caoliang1918@gmail.com
  * @date :   2018/7/12 23:12
  */
-public class RefundRequest implements Serializable {
-
-    /**
-     * 支付平台
-     **/
-    @NotBlank(message = "支付平台不能为空")
-    private Channel channel;
+public class RefundRequest extends BaseRequest {
     /**
      * 订单号
      **/
@@ -51,14 +45,6 @@ public class RefundRequest implements Serializable {
      * 如果参数中传了notify_url，则商户平台上配置的回调地址将不会生效
      */
     private String notifyUrl;
-
-    public Channel getChannel() {
-        return channel;
-    }
-
-    public void setChannel(Channel channel) {
-        this.channel = channel;
-    }
 
     public String getOrderNo() {
         return orderNo;
