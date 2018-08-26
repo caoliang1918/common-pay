@@ -2,171 +2,192 @@ package org.zhongweixian.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.*;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.*;
-import java.nio.charset.Charset;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
  * Created by caoliang on  6/6/2018
- * <p>
- * 恶心的微信
  */
 public class XMLConverUtil {
     private static Logger logger = LoggerFactory.getLogger(XMLConverUtil.class);
-    private static Map<Class<?>, Marshaller> M_MAP;
 
-    private static Map<Class<?>, Unmarshaller> U_MAP;
+    public static DocumentBuilder newDocumentBuilder() throws ParserConfigurationException {
+        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+        documentBuilderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        documentBuilderFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        documentBuilderFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        documentBuilderFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        documentBuilderFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        documentBuilderFactory.setXIncludeAware(false);
+        documentBuilderFactory.setExpandEntityReferences(false);
 
-    private final static String CHAT_SET = "UTF-8";
+        return documentBuilderFactory.newDocumentBuilder();
+    }
 
-    static {
-        M_MAP = new HashMap<Class<?>, Marshaller>();
-        U_MAP = new HashMap<Class<?>, Unmarshaller>();
+    public static Document newDocument() throws ParserConfigurationException {
+        return newDocumentBuilder().newDocument();
     }
 
     /**
-     * XML to Object
+     * XML格式字符串转换为Map
      *
-     * @param <T>   T
-     * @param clazz clazz
-     * @param xml   xml
-     * @return T
+     * @param strXML XML字符串
+     * @return XML数据转换后的Map
+     * @throws Exception
      */
-    public static <T> T convertToObject(Class<T> clazz, String xml) {
-        return convertToObject(clazz, new StringReader(xml));
-    }
-
-    /**
-     * XML to Object
-     *
-     * @param <T>         T
-     * @param clazz       clazz
-     * @param inputStream inputStream
-     * @return T
-     */
-    public static <T> T convertToObject(Class<T> clazz, InputStream inputStream) {
-        return convertToObject(clazz, new InputStreamReader(inputStream));
-    }
-
-    /**
-     * XML to Object
-     *
-     * @param <T>         T
-     * @param clazz       clazz
-     * @param inputStream inputStream
-     * @param charset     charset
-     * @return T
-     */
-    public static <T> T convertToObject(Class<T> clazz, InputStream inputStream, Charset charset) {
-        return convertToObject(clazz, new InputStreamReader(inputStream, charset));
-    }
-
-    /**
-     * XML to Object
-     *
-     * @param <T>    T
-     * @param clazz  clazz
-     * @param reader reader
-     * @return T
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T convertToObject(Class<T> clazz, Reader reader) {
+    public static <T> T xmlToObject(String strXML, Class<T> clazz) throws Exception {
         try {
-            if (!U_MAP.containsKey(clazz)) {
-                JAXBContext jaxbContext = JAXBContext.newInstance(clazz);
-                Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-                U_MAP.put(clazz, unmarshaller);
-            }
-            return (T) U_MAP.get(clazz).unmarshal(reader);
-        } catch (JAXBException e) {
-            logger.error("", e);
-        }
-        return null;
-    }
-
-    /**
-     * Object to XML
-     *
-     * @param object object
-     * @return xml
-     */
-    public static String convertToXML(Object object) {
-        try {
-            if (!M_MAP.containsKey(object.getClass())) {
-                JAXBContext jaxbContext = JAXBContext.newInstance(object.getClass());
-                Marshaller marshaller = jaxbContext.createMarshaller();
-                marshaller.setProperty(Marshaller.JAXB_ENCODING, CHAT_SET);
-                //是否省略xml头信息，默认false
-                marshaller.setProperty(Marshaller.JAXB_FRAGMENT, true);
-                //格式化生成的xml串
-                marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-                //设置CDATA输出字符
-                /*marshaller.setProperty(CharacterEscapeHandler.class.getName(), new CharacterEscapeHandler() {
-                    @Override
-                    public void escape(char[] ac, int i, int j, boolean flag, Writer writer) throws IOException {
-                        writer.write(ac, i, j);
-                    }
-                });*/
-                M_MAP.put(object.getClass(), marshaller);
-            }
-            StringWriter stringWriter = new StringWriter();
-            M_MAP.get(object.getClass()).marshal(object, stringWriter);
-            return stringWriter.getBuffer().toString();
-        } catch (JAXBException e) {
-            logger.error("", e);
-        }
-        return null;
-    }
-
-    /**
-     * 转换简单的xml to map
-     *
-     * @param xml xml
-     * @return map
-     */
-    public static Map<String, String> convertToMap(String xml) {
-        Map<String, String> map = new LinkedHashMap<String, String>();
-        try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            DocumentBuilder db = dbf.newDocumentBuilder();
-            StringReader sr = new StringReader(xml);
-            InputSource is = new InputSource(sr);
-            Document document = db.parse(is);
-
-            Element root = document.getDocumentElement();
-            if (root != null) {
-                NodeList childNodes = root.getChildNodes();
-                if (childNodes != null && childNodes.getLength() > 0) {
-                    for (int i = 0; i < childNodes.getLength(); i++) {
-                        Node node = childNodes.item(i);
-                        if (node != null && node.getNodeType() == Node.ELEMENT_NODE) {
-                            map.put(node.getNodeName(), node.getTextContent());
-                        }
-                    }
+            Map<String, String> data = new HashMap<String, String>();
+            DocumentBuilder documentBuilder = newDocumentBuilder();
+            InputStream stream = new ByteArrayInputStream(strXML.getBytes("UTF-8"));
+            org.w3c.dom.Document doc = documentBuilder.parse(stream);
+            doc.getDocumentElement().normalize();
+            NodeList nodeList = doc.getDocumentElement().getChildNodes();
+            for (int idx = 0; idx < nodeList.getLength(); ++idx) {
+                Node node = nodeList.item(idx);
+                if (node.getNodeType() == Node.ELEMENT_NODE) {
+                    org.w3c.dom.Element element = (org.w3c.dom.Element) node;
+                    data.put(element.getNodeName(), element.getTextContent());
                 }
             }
-        } catch (DOMException e) {
-            logger.error("", e);
-        } catch (ParserConfigurationException e) {
-            logger.error("", e);
-        } catch (SAXException e) {
-            logger.error("", e);
-        } catch (IOException e) {
-            logger.error("", e);
+            stream.close();
+            return mapToObject(data, clazz);
+        } catch (Exception ex) {
+            logger.warn("xml转换成Object失败: {}", strXML);
+            throw ex;
+        }
+
+    }
+
+    /**
+     * 将Object转换为XML格式的字符串
+     *
+     * @param obj
+     * @return
+     * @throws Exception
+     */
+    public static String objToXml(Object obj) throws Exception {
+        Map<String, String> data = objectToMap(obj);
+        org.w3c.dom.Document document = newDocument();
+        org.w3c.dom.Element root = document.createElement("xml");
+        document.appendChild(root);
+        for (String key: data.keySet()) {
+            String value = data.get(key);
+            if (value == null) {
+                value = "";
+            }
+            value = value.trim();
+            org.w3c.dom.Element filed = document.createElement(key);
+            filed.appendChild(document.createTextNode(value));
+            root.appendChild(filed);
+        }
+        TransformerFactory tf = TransformerFactory.newInstance();
+        Transformer transformer = tf.newTransformer();
+        DOMSource source = new DOMSource(document);
+        transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        StringWriter writer = new StringWriter();
+        StreamResult result = new StreamResult(writer);
+        transformer.transform(source, result);
+        String output = writer.getBuffer().toString(); //.replaceAll("\n|\r", "");
+        try {
+            writer.close();
+        }
+        catch (Exception ex) {
+        }
+        return output;
+    }
+
+    public static String objToXml2(Map<String, String> data) throws Exception {
+        org.w3c.dom.Document document = newDocument();
+        org.w3c.dom.Element root = document.createElement("xml");
+        document.appendChild(root);
+        for (String key: data.keySet()) {
+            String value = data.get(key);
+            if (value == null) {
+                value = "";
+            }
+            value = value.trim();
+            org.w3c.dom.Element filed = document.createElement(key);
+            filed.appendChild(document.createTextNode(value));
+            root.appendChild(filed);
+        }
+        TransformerFactory tf = TransformerFactory.newInstance();
+        Transformer transformer = tf.newTransformer();
+        DOMSource source = new DOMSource(document);
+        transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        StringWriter writer = new StringWriter();
+        StreamResult result = new StreamResult(writer);
+        transformer.transform(source, result);
+        String output = writer.getBuffer().toString(); //.replaceAll("\n|\r", "");
+        try {
+            writer.close();
+        }
+        catch (Exception ex) {
+        }
+        return output;
+    }
+
+    public static Map<String, String> objectToMap(Object obj) throws Exception {
+        if (obj == null) {
+            return null;
+        }
+        Map<String, String> map = new HashMap<String, String>();
+        Field[] declaredFields = obj.getClass().getDeclaredFields();
+        for (Field field : declaredFields) {
+            field.setAccessible(true);
+            map.put(field.getName(), field.get(obj) == null ? null : field.get(obj).toString());
         }
         return map;
+    }
+
+    public static <T> T mapToObject(Map<String, String> map, Class<T> obj) throws Exception {
+        if (map == null) {
+            return null;
+        }
+        Field[] fields = obj.getClass().getDeclaredFields();
+        for (Field field : fields) {
+            int mod = field.getModifiers();
+            if (Modifier.isStatic(mod) || Modifier.isFinal(mod)) {
+                continue;
+            }
+            field.setAccessible(true);
+            field.set(obj, map.get(field.getName()));
+        }
+        return (T) obj;
+    }
+
+    public static void main(String[] args) {
+        Map<String , String> map = new HashMap<String, String>();
+        map.put("app_id" , "1111");
+        map.put("mech_id" , "222");
+        try {
+            String str = XMLConverUtil.objToXml2(map);
+            System.out.println(str);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
     }
 }
