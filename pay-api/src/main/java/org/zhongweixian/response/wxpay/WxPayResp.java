@@ -30,6 +30,8 @@ public class WxPayResp {
 
     private String mweb_url;
 
+    private String err_code_des;
+
 
     public String getReturn_code() {
         return return_code;
@@ -135,20 +137,11 @@ public class WxPayResp {
         this.mweb_url = mweb_url;
     }
 
-    @Override
-    public String toString() {
-        return "WxPayResp{" +
-                "return_code='" + return_code + '\'' +
-                ", return_msg='" + return_msg + '\'' +
-                ", appid='" + appid + '\'' +
-                ", mch_id='" + mch_id + '\'' +
-                ", nonce_str='" + nonce_str + '\'' +
-                ", sign='" + sign + '\'' +
-                ", sign_type='" + sign_type + '\'' +
-                ", result_code='" + result_code + '\'' +
-                ", prepay_id='" + prepay_id + '\'' +
-                ", trade_type='" + trade_type + '\'' +
-                ", code_url='" + code_url + '\'' +
-                '}';
+    public String getErr_code_des() {
+        return err_code_des;
+    }
+
+    public void setErr_code_des(String err_code_des) {
+        this.err_code_des = err_code_des;
     }
 }

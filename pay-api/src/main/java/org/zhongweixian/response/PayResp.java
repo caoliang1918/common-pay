@@ -59,4 +59,5 @@ public class PayResp extends BaseResp {
     public void setAmount(Long amount) {
         this.amount = amount;
     }
+
 }

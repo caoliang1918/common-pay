@@ -8,9 +8,9 @@ import java.util.Map;
  * @date :   2018/7/21 21:54
  */
 public class BaseResp implements Serializable {
-    private String code = "200";
-    private String msg = "SUCCESS";
-    private Map<String ,String> ext;
+    public String code = "200";
+    public String msg = "SUCCESS";
+    public Map<String ,String> ext;
 
     public String getCode() {
         return code;
@@ -34,5 +34,14 @@ public class BaseResp implements Serializable {
 
     public void setExt(Map<String, String> ext) {
         this.ext = ext;
+    }
+
+    @Override
+    public String toString() {
+        return "BaseResp{" +
+                "code='" + code + '\'' +
+                ", msg='" + msg + '\'' +
+                ", ext=" + ext +
+                '}';
     }
 }
