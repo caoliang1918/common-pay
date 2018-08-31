@@ -1,0 +1,17 @@
+<form id="alipaysubmit" name="alipaysubmit" action="https://mapi.alipay.com/gateway.do?_input_charset=utf-8" method="post">
+    <input type="hidden" name="_input_charset" value="utf-8"/>
+    <input type="hidden" name="subject" value="2222"/>
+    <input type="hidden" name="sign" value="fgvFfXu4GK19RINcdePmt2J+zQLg2yxSA4PisXUjULGFf1O+T0o8M8I6qRwqsanHu8iFbLxvxb+W3aErQWDbG9TAD5rVLRsVplSRUcm5oGhtOW6FIIWA8GZM3iFNW81TRuRklreNzxyhMHkdIoEZOkzT/AH5fgAHh6TI1Firj40="/>
+    <input type="hidden" name="notify_url" value="http://180.167.77.58:30003/api/alipay/aync_notify"/>
+    <input type="hidden" name="body" value="444444"/>
+    <input type="hidden" name="payment_type" value="1"/>
+    <input type="hidden" name="out_trade_no" value="1111"/>
+    <input type="hidden" name="partner" value="2088121145819891"/>
+    <input type="hidden" name="service" value="create_direct_pay_by_user"/>
+    <input type="hidden" name="total_fee" value="33333"/>
+    <input type="hidden" name="return_url" value="http://180.167.77.58:30003/api/alipay/sync_return"/>
+    <input type="hidden" name="sign_type" value="RSA"/>
+    <input type="hidden" name="seller_id" value="2088121145819891"/>
+    <input type="submit" value="确认" style="display:none;">
+</form>
+<script>document.forms['alipaysubmit'].submit();</script>

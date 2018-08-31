@@ -37,6 +37,11 @@ public class Config {
     public String wxKey;
 
     /**
+     * 回调通知地址
+     */
+    public String notifyUrl;
+
+    /**
      * 商户证书 微信商户平台(pay.weixin.qq.com)-->账户中心-->账户设置-->API安全-->证书下载
      */
     private String certPath;
@@ -96,5 +101,13 @@ public class Config {
 
     public void setCertPath(String certPath) {
         this.certPath = certPath;
+    }
+
+    public String getNotifyUrl() {
+        return notifyUrl;
+    }
+
+    public void setNotifyUrl(String notifyUrl) {
+        this.notifyUrl = notifyUrl;
     }
 }

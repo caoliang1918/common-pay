@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.zhongweixian.demo.entity.CommonResponse;
 import org.zhongweixian.model.Channel;
@@ -21,8 +22,9 @@ import java.util.Map;
  */
 
 @RestController
-public class IndexController {
-    Logger logger = LoggerFactory.getLogger(IndexController.class);
+@RequestMapping("wx")
+public class WxPayController {
+    Logger logger = LoggerFactory.getLogger(WxPayController.class);
 
     @Autowired
     private CommonPay commonPay;
@@ -41,7 +43,6 @@ public class IndexController {
         payRequest.setOrderNo(Long.toString(new SnowFlakeIdGenerator().nextId()));
         payRequest.setBody("王吉吉快来扫啊");
         payRequest.setClientIp("123.12.12.123");
-        payRequest.setNotifyUrl("https://www.google.com");
         PayResp payResp = commonPay.pay(payRequest);
         return new CommonResponse<PayResp>(payResp);
     }
@@ -66,21 +67,25 @@ public class IndexController {
         PayResp payResp = commonPay.pay(payRequest);
         return new CommonResponse<PayResp>(payResp);
     }
-    @PostMapping("app")
-    public CommonResponse<PayResp> appPay(String authCode) {
+
+
+    @PostMapping("js")
+    public CommonResponse<PayResp> h5Pay() {
         PayRequest payRequest = new PayRequest();
         payRequest.setChannel(Channel.WX_PAY);
-        payRequest.setPayType(PayType.WX_APP);
+        payRequest.setPayType(PayType.WX_JS);
         payRequest.setAmount(1L);
         payRequest.setOrderNo(Long.toString(new SnowFlakeIdGenerator().nextId()));
         payRequest.setBody("王吉吉快来扫啊");
         payRequest.setClientIp("123.12.12.123");
         Map<String, String> ext = new HashMap<String, String>();
-        ext.put("authCode", authCode);
+        ext.put("openid", "openid");
         payRequest.setExt(ext);
         PayResp payResp = commonPay.pay(payRequest);
         return new CommonResponse<PayResp>(payResp);
     }
+
+
 
 
 }

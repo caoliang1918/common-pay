@@ -63,7 +63,12 @@ public class PayRequest extends BaseRequest {
     private String random;
 
     /**
-     * 后端通知地址
+     * 请求地址(可以不填)
+     */
+    private String requestUrl;
+
+    /**
+     * 后端通知地址:如果不填，则从配置文件中取
      */
     private String notifyUrl;
 
@@ -155,6 +160,14 @@ public class PayRequest extends BaseRequest {
 
     public void setRandom(String random) {
         this.random = random;
+    }
+
+    public String getRequestUrl() {
+        return requestUrl;
+    }
+
+    public void setRequestUrl(String requestUrl) {
+        this.requestUrl = requestUrl;
     }
 
     public String getNotifyUrl() {

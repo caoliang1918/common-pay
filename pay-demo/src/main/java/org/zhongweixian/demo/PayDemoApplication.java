@@ -15,12 +15,12 @@ import org.zhongweixian.service.CommonPay;
 @SpringBootApplication
 public class PayDemoApplication {
 
-     @Autowired
-    AutoConfig autoConfig;
+    @Autowired
+    private AutoConfig autoConfig;
 
 
     @Bean
-    public CommonPay commonPayService(){
+    public CommonPay commonPayService() {
         Config config = new Config();
         BeanUtils.copyProperties(autoConfig, config);
         return new CommonPayImpl(config);

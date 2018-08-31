@@ -34,7 +34,7 @@ import java.util.Map;
 public class AliPayServiceImpl implements CommonPay {
     private Logger logger = LoggerFactory.getLogger(AliPayServiceImpl.class);
     private final static String ALI_PAY_URL = "https://openapi.alipay.com/gateway.do";
-    private final static String CHART_SET = "UTF-8";
+    private final static String CHART_SET = "utf-8";
     private final static String FORMAT = "JSON";
     private final static String SIGN_TYPE = "RSA2";
     private AlipayClient alipayClient = null;
@@ -46,14 +46,15 @@ public class AliPayServiceImpl implements CommonPay {
 
     @Override
     public PayResp pay(PayRequest payRequest) {
-        if (!payRequest.getChannel().equals(Channel.ALI_PAY)) {
-            throw new PayException(ErrorCode.PAY_CHANNEL_ERROR, payRequest.getChannel().name());
+        if (!Channel.ALI_PAY.equals(payRequest.getChannel())) {
+            throw new PayException(ErrorCode.PAY_RESPONSE_ERROR, "支付方式channle错误");
         }
         if (payRequest.getAmount() == null || payRequest.getAmount() < 1L) {
             throw new PayException(ErrorCode.PAY_AMOUNT_ERROR);
         }
         BigDecimal amount = new BigDecimal(payRequest.getAmount());
         amount = amount.divide(new BigDecimal(100));
+        payRequest.setAmount(amount.longValue());
         switch (payRequest.getPayType()) {
             case ALI_APP:
                 return appPay(payRequest, amount.toString());
@@ -436,7 +437,7 @@ public class AliPayServiceImpl implements CommonPay {
     @Override
     public boolean webhooksVerify(VerifyRequest verifyRequest) {
         Map<String, String> params = MapUtil.objectToMap(verifyRequest.getBody());
-        params.put("sign" ,verifyRequest.getSignature());
+        params.put("sign", verifyRequest.getSignature());
 
         boolean signVerified = false;
         try {

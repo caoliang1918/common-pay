@@ -63,8 +63,8 @@ public class WxPayServiceImpl implements CommonPay {
      */
     @Override
     public PayResp pay(PayRequest payRequest) {
-        if (!payRequest.getChannel().equals(Channel.WX_PAY)) {
-            throw new PayException(ErrorCode.PAY_CHANNEL_ERROR, payRequest.getChannel().name());
+        if (!Channel.WX_PAY.equals(payRequest.getChannel())) {
+            throw new PayException(ErrorCode.PAY_RESPONSE_ERROR, "支付方式channle错误");
         }
         if (payRequest.getAmount() == null || payRequest.getAmount() < 1L) {
             throw new PayException(ErrorCode.PAY_AMOUNT_ERROR);
@@ -275,6 +275,7 @@ public class WxPayServiceImpl implements CommonPay {
             throw new PayException(ErrorCode.PAY_WX_AUTH_CODE_ERROR);
         }
         payRequest.setNotifyUrl(null);
+        payRequest.setPayType(null);
         PayResp response = new PayResp();
         WxPayRequestXml wxPayRequestXml = new WxPayRequestXml();
         //通用请求对象转换xml对象
@@ -311,11 +312,10 @@ public class WxPayServiceImpl implements CommonPay {
      */
     private PayResp appPay(PayRequest payRequest) {
         PayResp response = new PayResp();
+        payRequest.setNotifyUrl(payRequest.getNotifyUrl() == null ? config.notifyUrl : payRequest.getNotifyUrl());
         WxPayRequestXml wxPayRequestXml = new WxPayRequestXml();
         //通用请求对象转换xml对象
         pay2Wx(payRequest, wxPayRequestXml);
-        //设置支付方式
-        wxPayRequestXml.setTrade_type(PayType.WX_APP.getValue());
         //签名运算
         wxPayRequestXml.setSign(sign(wxPayRequestXml));
         wxPayRequestXml.setRequestUrl(WX_PAY_URL);
@@ -343,6 +343,7 @@ public class WxPayServiceImpl implements CommonPay {
     private PayResp h5Pay(PayRequest payRequest) {
         PayResp response = new PayResp();
         WxPayRequestXml wxPayRequestXml = new WxPayRequestXml();
+        payRequest.setNotifyUrl(payRequest.getNotifyUrl() == null ? config.notifyUrl : payRequest.getNotifyUrl());
         //通用请求对象转换xml对象
         pay2Wx(payRequest, wxPayRequestXml);
         //签名运算
@@ -375,10 +376,9 @@ public class WxPayServiceImpl implements CommonPay {
     private PayResp qrcodePay(PayRequest payRequest) {
         PayResp response = new PayResp();
         WxPayRequestXml wxPayRequestXml = new WxPayRequestXml();
+        payRequest.setNotifyUrl(payRequest.getNotifyUrl() == null ? config.notifyUrl : payRequest.getNotifyUrl());
         //通用请求对象转换xml对象
         pay2Wx(payRequest, wxPayRequestXml);
-        //设置支付方式
-        wxPayRequestXml.setTrade_type(PayType.WX_QRCODE.getValue());
         //签名运算
         wxPayRequestXml.setSign(sign(wxPayRequestXml));
         wxPayRequestXml.setRequestUrl(WX_PAY_URL);
@@ -398,6 +398,35 @@ public class WxPayServiceImpl implements CommonPay {
         return response;
     }
 
+    private PayResp jsPay(PayRequest payRequest) {
+        PayResp response = new PayResp();
+        WxPayRequestXml wxPayRequestXml = new WxPayRequestXml();
+        payRequest.setNotifyUrl(payRequest.getNotifyUrl() == null ? config.notifyUrl : payRequest.getNotifyUrl());
+        //通用请求对象转换xml对象
+        pay2Wx(payRequest, wxPayRequestXml);
+
+        String openid = payRequest.getExt().get("openid");
+        if (openid == null) {
+            throw new PayException(ErrorCode.PAY_RESPONSE_ERROR, "openid不能为空");
+        }
+        wxPayRequestXml.setOpenid(openid);
+        //签名运算
+        wxPayRequestXml.setSign(sign(wxPayRequestXml));
+        wxPayRequestXml.setRequestUrl(StringUtils.isBlank(payRequest.getReturnUrl()) ? WX_PAY_URL : payRequest.getReturnUrl());
+        /**
+         * 预支付成功，构建APP支付需要的对象
+         */
+        WxPayResp wxResponse = createCharge(wxPayRequestXml);
+        Map<String, String> ext = new HashMap<String, String>();
+        ext.put("appId", config.wxAppId);
+        ext.put("mchId", config.wxMchId);
+        ext.put("prepayId", wxResponse.getPrepay_id());
+        ext.put("tradeType", wxResponse.getTrade_type());
+        response.setExt(ext);
+        response.setAmount(payRequest.getAmount());
+        return response;
+    }
+
 
     /**
      * 构建公共参数
@@ -408,6 +437,8 @@ public class WxPayServiceImpl implements CommonPay {
     private void pay2Wx(PayRequest payRequest, WxPayRequestXml wxPayRequestXml) {
         wxPayRequestXml.setAppid(config.wxAppId);
         wxPayRequestXml.setMch_id(config.wxMchId);
+        wxPayRequestXml.setNotify_url(payRequest.getNotifyUrl());
+        wxPayRequestXml.setTrade_type(payRequest.getPayType() == null ? null : payRequest.getPayType().getValue());
         String random = RandomStringUtils.randomAlphabetic(32);
         wxPayRequestXml.setNonce_str(random);
         wxPayRequestXml.setSign_type(SIGN_TYPE);
@@ -415,7 +446,6 @@ public class WxPayServiceImpl implements CommonPay {
         wxPayRequestXml.setOut_trade_no(payRequest.getOrderNo());
         wxPayRequestXml.setTotal_fee(payRequest.getAmount().toString());
         wxPayRequestXml.setSpbill_create_ip(payRequest.getClientIp());
-        wxPayRequestXml.setNotify_url(payRequest.getNotifyUrl());
         if (payRequest.getExt().containsKey("scene_info")) {
             wxPayRequestXml.setScene_info(payRequest.getExt().get("scene_info"));
         }
@@ -460,33 +490,9 @@ public class WxPayServiceImpl implements CommonPay {
         logger.debug("pay response:{}", result);
         WxPayResp wxResponse = XMLConverUtil.xmlToObject(result, WxPayResp.class);
         if (!SUCCESS.equals(wxResponse.getResult_code()) || !OK.equals(wxResponse.getReturn_msg())) {
-            throw new PayException(ErrorCode.PAY_RESPONSE_ERROR, wxResponse.getErr_code_des());
+            throw new PayException(ErrorCode.PAY_RESPONSE_ERROR, StringUtils.isEmpty(wxResponse.getErr_code_des()) ? wxResponse.getReturn_msg() : wxResponse.getErr_code_des());
         }
         logger.info("wxReponse success :orderNo:{} , prepay_id:{} , trade_type:{}", wxPayRequestXml.getOut_trade_no(), wxResponse.getPrepay_id(), wxResponse.getTrade_type());
         return wxResponse;
-    }
-
-    private PayResp jsPay(PayRequest payRequest) {
-        PayResp response = new PayResp();
-        WxPayRequestXml wxPayRequestXml = new WxPayRequestXml();
-        //通用请求对象转换xml对象
-        pay2Wx(payRequest, wxPayRequestXml);
-        //设置支付方式
-        wxPayRequestXml.setTrade_type(PayType.WX_JS.getValue());
-        //签名运算
-        wxPayRequestXml.setSign(sign(wxPayRequestXml));
-        wxPayRequestXml.setRequestUrl(WX_PAY_URL);
-        /**
-         * 预支付成功，构建APP支付需要的对象
-         */
-        WxPayResp wxResponse = createCharge(wxPayRequestXml);
-        Map<String, String> ext = new HashMap<String, String>();
-        ext.put("appId", config.wxAppId);
-        ext.put("mchId", config.wxMchId);
-        ext.put("prepayId", wxResponse.getPrepay_id());
-        ext.put("tradeType", wxResponse.getTrade_type());
-        response.setExt(ext);
-        response.setAmount(payRequest.getAmount());
-        return response;
     }
 }

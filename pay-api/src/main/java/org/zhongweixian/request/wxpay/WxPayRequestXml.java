@@ -89,6 +89,9 @@ public class WxPayRequestXml {
     @XmlJavaTypeAdapter(value = DetailXmlAdapter.class)
     private String scene_info;
 
+    @XmlElement
+    private String openid;
+
     public String getAppid() {
         return appid;
     }
@@ -271,5 +274,13 @@ public class WxPayRequestXml {
 
     public void setScene_info(String scene_info) {
         this.scene_info = scene_info;
+    }
+
+    public String getOpenid() {
+        return openid;
+    }
+
+    public void setOpenid(String openid) {
+        this.openid = openid;
     }
 }
