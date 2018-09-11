@@ -16,10 +16,14 @@ public class CommonPayImpl implements CommonPay {
 
     private AliPayServiceImpl aliPayService;
     private WxPayServiceImpl wxPayService;
+    private UnionPayServiceImpl unionPayService;
+    private CmbPayServiceImpl cmbPayService;
 
     public CommonPayImpl(Config config) {
         this.aliPayService = new AliPayServiceImpl(config);
         this.wxPayService = new WxPayServiceImpl(config);
+        this.unionPayService = new UnionPayServiceImpl(config);
+        this.cmbPayService = new CmbPayServiceImpl(config);
     }
 
     @Override
@@ -56,6 +60,10 @@ public class CommonPayImpl implements CommonPay {
                 return wxPayService;
             case ALI_PAY:
                 return aliPayService;
+            case UNION_PAY:
+                return unionPayService;
+            case CMB_PAY:
+                return cmbPayService;
             default:
                 throw new PayException(ErrorCode.PAY_CHANNEL_ERROR);
         }
