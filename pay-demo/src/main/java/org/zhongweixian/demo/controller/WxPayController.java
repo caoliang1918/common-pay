@@ -7,15 +7,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.zhongweixian.demo.entity.CommonResponse;
-import org.zhongweixian.model.Channel;
-import org.zhongweixian.model.PayType;
+import org.zhongweixian.request.Channel;
+import org.zhongweixian.request.Config;
 import org.zhongweixian.request.PayRequest;
+import org.zhongweixian.request.PayType;
 import org.zhongweixian.response.PayResp;
 import org.zhongweixian.service.CommonPay;
 import org.zhongweixian.util.SnowFlakeIdGenerator;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by caoliang on 2018/8/25
@@ -36,13 +34,14 @@ public class WxPayController {
      */
     @PostMapping("qrcode")
     public CommonResponse<PayResp> qrcodePay() {
-        PayRequest payRequest = new PayRequest();
-        payRequest.setChannel(Channel.WX_PAY);
-        payRequest.setPayType(PayType.WX_QRCODE);
-        payRequest.setAmount(100L);
-        payRequest.setOrderNo(Long.toString(new SnowFlakeIdGenerator().nextId()));
-        payRequest.setBody("王吉吉快来扫啊");
-        payRequest.setClientIp("123.12.12.123");
+        PayRequest payRequest = PayRequest.newBuilder().
+                setChannel(Channel.WX_PAY).
+                setPayType(PayType.WX_QRCODE).
+                setAmount(100L).
+                setOrderNo(Long.toString(new SnowFlakeIdGenerator().nextId())).
+                setBody("王吉吉快来扫啊").
+                setClientIp("123.12.12.123").
+                build();
         PayResp payResp = commonPay.pay(payRequest);
         return new CommonResponse<PayResp>(payResp);
     }
@@ -54,16 +53,15 @@ public class WxPayController {
      */
     @PostMapping("face")
     public CommonResponse<PayResp> facePay(String authCode) {
-        PayRequest payRequest = new PayRequest();
-        payRequest.setChannel(Channel.WX_PAY);
-        payRequest.setPayType(PayType.WX_MICRO);
-        payRequest.setAmount(2L);
-        payRequest.setOrderNo(Long.toString(new SnowFlakeIdGenerator().nextId()));
-        payRequest.setBody("王吉吉快来扫啊");
-        payRequest.setClientIp("123.12.12.123");
-        Map<String, String> ext = new HashMap<String, String>();
-        ext.put("authCode", authCode);
-        payRequest.setExt(ext);
+        PayRequest payRequest = PayRequest.newBuilder().
+                setChannel(Channel.WX_PAY).
+                setPayType(PayType.WX_MICRO).
+                setAmount(1L).
+                setOrderNo(Long.toString(new SnowFlakeIdGenerator().nextId())).
+                setBody("王吉吉快来扫啊").
+                setClientIp("123.12.12.123").
+                putExt("authCode", authCode).
+                build();
         PayResp payResp = commonPay.pay(payRequest);
         return new CommonResponse<PayResp>(payResp);
     }
@@ -71,21 +69,18 @@ public class WxPayController {
 
     @PostMapping("js")
     public CommonResponse<PayResp> h5Pay() {
-        PayRequest payRequest = new PayRequest();
-        payRequest.setChannel(Channel.WX_PAY);
-        payRequest.setPayType(PayType.WX_JS);
-        payRequest.setAmount(1L);
-        payRequest.setOrderNo(Long.toString(new SnowFlakeIdGenerator().nextId()));
-        payRequest.setBody("王吉吉快来扫啊");
-        payRequest.setClientIp("123.12.12.123");
-        Map<String, String> ext = new HashMap<String, String>();
-        ext.put("openid", "openid");
-        payRequest.setExt(ext);
+        PayRequest payRequest = PayRequest.newBuilder().
+                setChannel(Channel.WX_PAY).
+                setPayType(PayType.WX_JS).
+                setAmount(1L).
+                setOrderNo(Long.toString(new SnowFlakeIdGenerator().nextId())).
+                setBody("王吉吉快来扫啊").
+                setClientIp("123.12.12.123").
+                putExt("openid", "openid").
+                build();
         PayResp payResp = commonPay.pay(payRequest);
         return new CommonResponse<PayResp>(payResp);
     }
-
-
 
 
 }

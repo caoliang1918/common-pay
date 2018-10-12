@@ -1,9 +1,7 @@
 package org.zhongweixian.demo;
 
-import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -21,10 +19,16 @@ public class PayDemoApplication {
 
     @Bean
     public CommonPay commonPayService() {
-        Config config = new Config();
-        BeanUtils.copyProperties(autoConfig, config);
+        Config config = Config.newBuilder()
+                .setWxKey(autoConfig.getWxKey())
+                .setWxAppId(autoConfig.getWxAppId())
+                .setWxKey(autoConfig.getWxKey())
+                .setAliAppId(autoConfig.getAliAppId())
+                .setAliPublicKey(autoConfig.getAliPublicKey())
+                .setCertPath(autoConfig.getCertPath())
+                .setNotifyUrl(autoConfig.getNotifyUrl())
+                .setPrivateKey(autoConfig.getPrivateKey()).build();
         return new CommonPayImpl(config);
-
     }
 
     public static void main(String[] args) {

@@ -28,34 +28,34 @@ public class CommonPayImpl implements CommonPay {
 
     @Override
     public PayResp pay(PayRequest payRequest) {
-        return getInstance(payRequest).pay(payRequest);
+        return getInstance(payRequest.getChannel()).pay(payRequest);
     }
 
     @Override
     public OrderQueryResp queryOrder(OrderRequest orderRequest) {
-        return getInstance(orderRequest).queryOrder(orderRequest);
+        return getInstance(orderRequest.getChannel()).queryOrder(orderRequest);
     }
 
     @Override
     public CloseOrderResp closeOrder(OrderRequest orderRequest) {
-        return getInstance(orderRequest).closeOrder(orderRequest);
+        return getInstance(orderRequest.getChannel()).closeOrder(orderRequest);
     }
 
     @Override
     public RefundResp refund(RefundRequest refundRequest) {
-        return getInstance(refundRequest).refund(refundRequest);
+        return getInstance(refundRequest.getChannel()).refund(refundRequest);
     }
 
     @Override
     public boolean webhooksVerify(VerifyRequest verifyRequest) {
-        return getInstance(verifyRequest).webhooksVerify(verifyRequest);
+        return getInstance(verifyRequest.getChannel()).webhooksVerify(verifyRequest);
     }
 
-    private CommonPay getInstance(BaseRequest baseRequest) {
-        if (baseRequest == null || baseRequest.getChannel() == null) {
+    private CommonPay getInstance(Channel channel) {
+        if (channel == null) {
             throw new PayException(ErrorCode.PAY_CHANNEL_ERROR);
         }
-        switch (baseRequest.getChannel()) {
+        switch (channel) {
             case WX_PAY:
                 return wxPayService;
             case ALI_PAY:

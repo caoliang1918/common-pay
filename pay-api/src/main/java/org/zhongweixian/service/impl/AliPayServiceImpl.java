@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zhongweixian.exception.ErrorCode;
 import org.zhongweixian.exception.PayException;
-import org.zhongweixian.model.Channel;
 import org.zhongweixian.request.*;
 import org.zhongweixian.response.CloseOrderResp;
 import org.zhongweixian.response.OrderQueryResp;
@@ -40,7 +39,7 @@ public class AliPayServiceImpl implements CommonPay {
     private AlipayClient alipayClient = null;
 
     public AliPayServiceImpl(Config config) {
-        this.alipayClient = new DefaultAlipayClient(ALI_PAY_URL, config.aliAppId, config.privateKey, FORMAT, CHART_SET, config.aliPublicKey, SIGN_TYPE);
+        this.alipayClient = new DefaultAlipayClient(ALI_PAY_URL, config.getAliAppId(), config.getPrivateKey(), FORMAT, CHART_SET, config.getAliPublicKey(), SIGN_TYPE);
     }
 
 
@@ -49,12 +48,12 @@ public class AliPayServiceImpl implements CommonPay {
         if (!Channel.ALI_PAY.equals(payRequest.getChannel())) {
             throw new PayException(ErrorCode.PAY_RESPONSE_ERROR, "支付方式channle错误");
         }
-        if (payRequest.getAmount() == null || payRequest.getAmount() < 1L) {
+        if (payRequest.getAmount() < 1L) {
             throw new PayException(ErrorCode.PAY_AMOUNT_ERROR);
         }
         BigDecimal amount = new BigDecimal(payRequest.getAmount());
         amount = amount.divide(new BigDecimal(100));
-        payRequest.setAmount(amount.longValue());
+        payRequest.toBuilder().setAmount(amount.longValue());
         switch (payRequest.getPayType()) {
             case ALI_APP:
                 return appPay(payRequest, amount.toString());
@@ -88,26 +87,26 @@ public class AliPayServiceImpl implements CommonPay {
         /**
          * 操作员
          */
-        if (StringUtils.isNotBlank(payRequest.getExt().get("operatorId"))) {
-            params.put("operator_id", payRequest.getExt().get("operatorId"));
+        if (StringUtils.isNotBlank(payRequest.getExtMap().get("operatorId"))) {
+            params.put("operator_id", payRequest.getExtMap().get("operatorId"));
         }
         /**
          * 店面
          */
-        if (StringUtils.isNotBlank(payRequest.getExt().get("storeId"))) {
-            params.put("store_id", payRequest.getExt().get("storeId"));
+        if (StringUtils.isNotBlank(payRequest.getExtMap().get("storeId"))) {
+            params.put("store_id", payRequest.getExtMap().get("storeId"));
         }
         /**
          * 硬件设备编号
          */
-        if (StringUtils.isNotBlank(payRequest.getExt().get("terminalId"))) {
-            params.put("terminal_id", payRequest.getExt().get("terminalId"));
+        if (StringUtils.isNotBlank(payRequest.getExtMap().get("terminalId"))) {
+            params.put("terminal_id", payRequest.getExtMap().get("terminalId"));
         }
         /**
          * 禁用渠道,当有多个渠道时用“,”分隔 [https://docs.open.alipay.com/common/wifww7]
          */
-        if (StringUtils.isNotBlank(payRequest.getExt().get("disablePayChannels"))) {
-            params.put("disable_pay_channels", payRequest.getExt().get("disablePayChannels"));
+        if (StringUtils.isNotBlank(payRequest.getExtMap().get("disablePayChannels"))) {
+            params.put("disable_pay_channels", payRequest.getExtMap().get("disablePayChannels"));
         }
         request.setBizContent(JSON.toJSONString(params));
         AlipayTradePrecreateResponse response = null;
@@ -155,7 +154,7 @@ public class AliPayServiceImpl implements CommonPay {
         params.put("out_trade_no", payRequest.getOrderNo());
         params.put("scene", scene);
         params.put("auth_code", authCode);
-        params.put("product_code", payRequest.getPayType().getValue());
+        params.put("product_code", payType2String(payRequest.getPayType().getNumber()));
         params.put("subject", payRequest.getBody());
         params.put("total_amount", amount);
         //门店编号
@@ -204,7 +203,7 @@ public class AliPayServiceImpl implements CommonPay {
         model.setOutTradeNo(payRequest.getOrderNo());
         model.setTimeoutExpress("30m");
         model.setTotalAmount(amount);
-        model.setProductCode(payRequest.getPayType().getValue());
+        model.setProductCode(payType2String(payRequest.getPayType().getNumber()));
         request.setBizModel(model);
         request.setNotifyUrl(payRequest.getNotifyUrl());
         AlipayTradeAppPayResponse response = null;
@@ -246,7 +245,7 @@ public class AliPayServiceImpl implements CommonPay {
         params.put("out_trade_no", payRequest.getOrderNo());
         params.put("total_amount", amount);
         params.put("subject", payRequest.getBody());
-        params.put("product_code", payRequest.getPayType().getValue());
+        params.put("product_code", payType2String(payRequest.getPayType().getNumber()));
         if (StringUtils.isNotBlank(payRequest.getBody())) {
             params.put("body", payRequest.getDetail());
         }
@@ -285,7 +284,7 @@ public class AliPayServiceImpl implements CommonPay {
         alipayRequest.setNotifyUrl(payRequest.getNotifyUrl());
         Map<String, String> params = new HashMap<>();
         params.put("out_trade_no", payRequest.getOrderNo());
-        params.put("product_code", payRequest.getPayType().getValue());
+        params.put("product_code", payType2String(payRequest.getPayType().getNumber()));
         params.put("total_amount", amount);
         params.put("subject", payRequest.getBody());
         if (StringUtils.isNotBlank(payRequest.getBody())) {
@@ -446,5 +445,28 @@ public class AliPayServiceImpl implements CommonPay {
             e.printStackTrace();
         }
         return signVerified;
+    }
+
+    /**
+     * 转换成微信能识别的支付类型
+     *
+     * @param num
+     * @return
+     */
+    private String payType2String(int num) {
+        switch (num) {
+            case 0:
+                return "QUICK_WAP_WAY";
+            case 1:
+                return "FAST_INSTANT_TRADE_PAY";
+            case 2:
+                return "QUICK_MSECURITY_PAY";
+            case 3:
+                return "FACE_TO_FACE_PAYMENT";
+            case 4:
+                return "talipay.trade.precreate\"";
+            default:
+                return null;
+        }
     }
 }
