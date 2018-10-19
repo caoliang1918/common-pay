@@ -229,7 +229,7 @@ public class WxPayServiceImpl implements CommonPay {
     }
 
     @Override
-    public boolean webhooksVerify(VerifyRequest verifyRequest) {
+    public String webhooksVerify(VerifyRequest verifyRequest) {
         Map<String, String> map = MapUtil.objectToMap(verifyRequest.getBody());
         String sign = verifyRequest.getSignature();
         if (StringUtils.isBlank(sign)) {
@@ -251,7 +251,14 @@ public class WxPayServiceImpl implements CommonPay {
         String result = sb.toString();
         result += "key=" + verifyRequest.getKey();
         result = Md5Util.encrypt(result).toUpperCase();
-        return result.equals(sign);
+        if (!result.equals(sign)){
+            return null;
+        }
+        return "<xml>\n" +
+                "\n" +
+                "  <return_code><![CDATA[SUCCESS]]></return_code>\n" +
+                "  <return_msg><![CDATA[OK]]></return_msg>\n" +
+                "</xml>";
     }
 
     /**
@@ -285,8 +292,6 @@ public class WxPayServiceImpl implements CommonPay {
          */
         WxPayResp wxResponse = createCharge(wxPayRequestXml);
         Map<String, String> ext = new HashMap<String, String>();
-        ext.put("appId", config.getWxAppId());
-        ext.put("mchId", config.getWxMchId());
         response.setExt(ext);
         response.setOrderId(wxResponse.getTransaction_id());
         response.setOrderNo(payRequest.getOrderNo());
@@ -308,10 +313,10 @@ public class WxPayServiceImpl implements CommonPay {
      */
     private PayResp appPay(PayRequest payRequest) {
         PayResp response = new PayResp();
-        payRequest.toBuilder().setNotifyUrl(payRequest.getNotifyUrl() == null ? config.getNotifyUrl() : payRequest.getNotifyUrl());
         WxPayRequestXml wxPayRequestXml = new WxPayRequestXml();
         //通用请求对象转换xml对象
         pay2Wx(payRequest, wxPayRequestXml);
+        wxPayRequestXml.setNotify_url(StringUtils.isEmpty(payRequest.getNotifyUrl()) ? config.getNotifyUrl() : payRequest.getNotifyUrl());
         //签名运算
         wxPayRequestXml.setSign(sign(wxPayRequestXml));
         wxPayRequestXml.setRequestUrl(WX_PAY_URL);
@@ -320,8 +325,6 @@ public class WxPayServiceImpl implements CommonPay {
          */
         WxPayResp wxResponse = createCharge(wxPayRequestXml);
         Map<String, String> ext = new HashMap<String, String>();
-        ext.put("appId", config.getWxAppId());
-        ext.put("mchId", config.getWxMchId());
         ext.put("prepayId", wxResponse.getPrepay_id());
         response.setExt(ext);
         response.setAmount(payRequest.getAmount());
@@ -339,9 +342,9 @@ public class WxPayServiceImpl implements CommonPay {
     private PayResp h5Pay(PayRequest payRequest) {
         PayResp response = new PayResp();
         WxPayRequestXml wxPayRequestXml = new WxPayRequestXml();
-        payRequest.toBuilder().setNotifyUrl(payRequest.getNotifyUrl() == null ? config.getNotifyUrl() : payRequest.getNotifyUrl());
         //通用请求对象转换xml对象
         pay2Wx(payRequest, wxPayRequestXml);
+        wxPayRequestXml.setNotify_url(StringUtils.isEmpty(payRequest.getNotifyUrl()) ? config.getNotifyUrl() : payRequest.getNotifyUrl());
         //签名运算
         wxPayRequestXml.setSign(sign(wxPayRequestXml));
         wxPayRequestXml.setRequestUrl(WX_PAY_URL);
@@ -350,8 +353,6 @@ public class WxPayServiceImpl implements CommonPay {
          */
         WxPayResp wxResponse = createCharge(wxPayRequestXml);
         Map<String, String> ext = new HashMap<String, String>();
-        ext.put("appId", config.getWxAppId());
-        ext.put("mchId", config.getWxMchId());
         ext.put("prepayId", wxResponse.getPrepay_id());
         ext.put("mwebUrl", wxResponse.getMweb_url());
         response.setExt(ext);
@@ -372,9 +373,9 @@ public class WxPayServiceImpl implements CommonPay {
     private PayResp qrcodePay(PayRequest payRequest) {
         PayResp response = new PayResp();
         WxPayRequestXml wxPayRequestXml = new WxPayRequestXml();
-        payRequest.toBuilder().setNotifyUrl(payRequest.getNotifyUrl() == null ? config.getNotifyUrl() : payRequest.getNotifyUrl());
         //通用请求对象转换xml对象
         pay2Wx(payRequest, wxPayRequestXml);
+        wxPayRequestXml.setNotify_url(StringUtils.isEmpty(payRequest.getNotifyUrl())  ? config.getNotifyUrl() : payRequest.getNotifyUrl());
         //签名运算
         wxPayRequestXml.setSign(sign(wxPayRequestXml));
         wxPayRequestXml.setRequestUrl(WX_PAY_URL);
@@ -383,8 +384,6 @@ public class WxPayServiceImpl implements CommonPay {
          */
         WxPayResp wxResponse = createCharge(wxPayRequestXml);
         Map<String, String> ext = new HashMap<String, String>();
-        ext.put("appId", config.getWxAppId());
-        ext.put("mchId", config.getWxMchId());
         ext.put("prepayId", wxResponse.getPrepay_id());
         //trade_type为NATIVE时有返回，用于生成二维码，展示给用户进行扫码支付
         ext.put("qrCode", wxResponse.getCode_url());
@@ -397,10 +396,9 @@ public class WxPayServiceImpl implements CommonPay {
     private PayResp jsPay(PayRequest payRequest) {
         PayResp response = new PayResp();
         WxPayRequestXml wxPayRequestXml = new WxPayRequestXml();
-        payRequest.toBuilder().setNotifyUrl(payRequest.getNotifyUrl() == null ? config.getNotifyUrl() : payRequest.getNotifyUrl());
         //通用请求对象转换xml对象
         pay2Wx(payRequest, wxPayRequestXml);
-
+        wxPayRequestXml.setNotify_url(StringUtils.isEmpty(payRequest.getNotifyUrl()) ? config.getNotifyUrl() : payRequest.getNotifyUrl());
         String openid = payRequest.getExt().get("openid");
         if (openid == null) {
             throw new PayException(ErrorCode.PAY_RESPONSE_ERROR, "openid不能为空");
@@ -414,8 +412,6 @@ public class WxPayServiceImpl implements CommonPay {
          */
         WxPayResp wxResponse = createCharge(wxPayRequestXml);
         Map<String, String> ext = new HashMap<String, String>();
-        ext.put("appId", config.getWxAppId());
-        ext.put("mchId", config.getWxMchId());
         ext.put("prepayId", wxResponse.getPrepay_id());
         ext.put("tradeType", wxResponse.getTrade_type());
         response.setExt(ext);

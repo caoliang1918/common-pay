@@ -52,6 +52,6 @@ public interface CommonPay {
     /**
      * 回调验证【可选】
      */
-    boolean webhooksVerify(VerifyRequest verifyRequest);
+    String webhooksVerify(VerifyRequest verifyRequest);
 
 }

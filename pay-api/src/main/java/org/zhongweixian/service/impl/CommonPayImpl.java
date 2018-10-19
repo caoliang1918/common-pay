@@ -47,7 +47,7 @@ public class CommonPayImpl implements CommonPay {
     }
 
     @Override
-    public boolean webhooksVerify(VerifyRequest verifyRequest) {
+    public String webhooksVerify(VerifyRequest verifyRequest) {
         return getInstance(verifyRequest.getChannel()).webhooksVerify(verifyRequest);
     }
 

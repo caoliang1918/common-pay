@@ -49,7 +49,7 @@ public class AutoConfig {
     /**
      * 商户证书 微信商户平台(pay.weixin.qq.com)-->账户中心-->账户设置-->API安全-->证书下载
      */
-    public String certPath;
+    public String wxCertPath;
 
     public String getAliAppId() {
         return aliAppId;
@@ -99,12 +99,12 @@ public class AutoConfig {
         this.wxKey = wxKey;
     }
 
-    public String getCertPath() {
-        return certPath;
+    public String getWxCertPath() {
+        return wxCertPath;
     }
 
-    public void setCertPath(String certPath) {
-        this.certPath = certPath;
+    public void setWxCertPath(String wxCertPath) {
+        this.wxCertPath = wxCertPath;
     }
 
     public String getNotifyUrl() {

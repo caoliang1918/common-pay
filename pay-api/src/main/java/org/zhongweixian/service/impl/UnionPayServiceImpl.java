@@ -42,7 +42,7 @@ public class UnionPayServiceImpl implements CommonPay {
     }
 
     @Override
-    public boolean webhooksVerify(VerifyRequest verifyRequest) {
-        return false;
+    public String webhooksVerify(VerifyRequest verifyRequest) {
+        return null;
     }
 }

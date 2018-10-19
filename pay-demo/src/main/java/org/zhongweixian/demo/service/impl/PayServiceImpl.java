@@ -8,6 +8,7 @@ import org.zhongweixian.demo.service.PayService;
 import org.zhongweixian.request.OrderRequest;
 import org.zhongweixian.request.PayRequest;
 import org.zhongweixian.request.RefundRequest;
+import org.zhongweixian.request.VerifyRequest;
 import org.zhongweixian.response.CloseOrderResp;
 import org.zhongweixian.response.OrderQueryResp;
 import org.zhongweixian.response.PayResp;
@@ -44,4 +45,11 @@ public class PayServiceImpl implements PayService {
     public CloseOrderResp closeOrder(OrderRequest orderRequest) {
         return commonPay.closeOrder(orderRequest);
     }
+
+    @Override
+    public String webhooksVerify(VerifyRequest verifyRequest) {
+        return commonPay.webhooksVerify(verifyRequest);
+    }
+
+
 }

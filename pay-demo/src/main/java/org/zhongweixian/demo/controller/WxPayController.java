@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.zhongweixian.demo.entity.CommonResponse;
 import org.zhongweixian.request.Channel;
-import org.zhongweixian.request.Config;
 import org.zhongweixian.request.PayRequest;
 import org.zhongweixian.request.PayType;
 import org.zhongweixian.response.PayResp;

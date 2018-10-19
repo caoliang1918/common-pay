@@ -434,7 +434,7 @@ public class AliPayServiceImpl implements CommonPay {
     }
 
     @Override
-    public boolean webhooksVerify(VerifyRequest verifyRequest) {
+    public String webhooksVerify(VerifyRequest verifyRequest) {
         Map<String, String> params = MapUtil.objectToMap(verifyRequest.getBody());
         params.put("sign", verifyRequest.getSignature());
 
@@ -444,7 +444,7 @@ public class AliPayServiceImpl implements CommonPay {
         } catch (AlipayApiException e) {
             e.printStackTrace();
         }
-        return signVerified;
+        return null;
     }
 
     /**

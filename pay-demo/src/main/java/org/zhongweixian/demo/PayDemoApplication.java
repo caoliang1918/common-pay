@@ -22,10 +22,10 @@ public class PayDemoApplication {
         Config config = Config.newBuilder()
                 .setWxKey(autoConfig.getWxKey())
                 .setWxAppId(autoConfig.getWxAppId())
-                .setWxKey(autoConfig.getWxKey())
+                .setWxMchId(autoConfig.getWxMchId())
                 .setAliAppId(autoConfig.getAliAppId())
                 .setAliPublicKey(autoConfig.getAliPublicKey())
-                .setCertPath(autoConfig.getCertPath())
+                .setCertPath(autoConfig.getWxCertPath())
                 .setNotifyUrl(autoConfig.getNotifyUrl())
                 .setPrivateKey(autoConfig.getPrivateKey()).build();
         return new CommonPayImpl(config);
